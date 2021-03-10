@@ -7,7 +7,7 @@ from sc2.position import Point2
 from sc2.units import Units
 
 
-class WorkerRushBot(sc2.BotAI):
+class FirstBot(sc2.BotAI):
     def worker_count(self) -> int:
         return self.units.of_type(UnitTypeId.DRONE).amount
 
@@ -64,6 +64,6 @@ class WorkerRushBot(sc2.BotAI):
 
 
 run_game(maps.get("AcropolisLE"), [
-    Bot(Race.Zerg, WorkerRushBot()),
+    Bot(Race.Zerg, FirstBot()),
     Computer(Race.Protoss, Difficulty.VeryEasy)
 ], realtime=True)

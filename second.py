@@ -42,11 +42,29 @@ class SecondBot(sc2.BotAI):
                 await self.build(UnitTypeId.SUPPLYDEPOT, self.townhalls.first.position.towards(self.game_info.map_center, 8))
 
     async def build_first_barracks(self):
-        all_racks = self.structures({UnitTypeId.BARRACKS, UnitTypeId.BARRACKSREACTOR})
-        if not all_racks and self.can_afford(UnitTypeId.BARRACKS) and not self.already_pending(UnitTypeId.BARRACKS):
-            await self.build(UnitTypeId.BARRACKS, self.main_base_ramp.barracks_in_middle)
-            return True
+        racks = self.structures(UnitTypeId.BARRACKS)
+        if self.can_afford(UnitTypeId.BARRACKS) and not self.already_pending(UnitTypeId.BARRACKS):
+            if not racks:
+                await self.build(UnitTypeId.BARRACKS, self.main_base_ramp.barracks_in_middle)
+                return True
+            if racks and self.units(UnitTypeId.MARINE).amount < 40 and self.minerals > 400 and self.structures(UnitTypeId.ENGINEERINGBAY):
+                await self.build(UnitTypeId.BARRACKS, self.structures(UnitTypeId.ENGINEERINGBAY).first)
+                return True
         return False
+
+    async def upgrade_marines(self):
+        ebay = self.structures(UnitTypeId.ENGINEERINGBAY)
+        if ebay:
+            if self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
+                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
+            if self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
+                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
+            if self.can_cast(ebay.first, AbilityId.RESEARCH_COMBATSHIELD):
+                ebay.first(AbilityId.RESEARCH_COMBATSHIELD)
+            if self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
+                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
+            if self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
+                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
 
     async def build_first_engineering_bay(self):
         all_racks = self.structures(UnitTypeId.ENGINEERINGBAY)
@@ -95,11 +113,16 @@ class SecondBot(sc2.BotAI):
         await self.build_first_barracks()
         await self.build_first_engineering_bay()
         await self.build_refineries()
+        await self.upgrade_marines()
 
         enemies = (self.enemy_units + self.enemy_structures).visible
         if enemies and self.units(UnitTypeId.MARINE):
             for m in self.units(UnitTypeId.MARINE):
-                m.attack(enemies.closest_to(m))
+                close_units = self.enemy_units.visible.closer_than(10, m)
+                if close_units:
+                    m.attack(close_units.closest_to(m))
+                else:
+                    m.attack(enemies.closest_to(m))
 
         if not enemies and self.units(UnitTypeId.MARINE).amount >= 10:
             for m in self.units(UnitTypeId.MARINE):
@@ -137,5 +160,5 @@ class SecondBot(sc2.BotAI):
 
 run_game(maps.get("AcropolisLE"), [
     Bot(Race.Terran, SecondBot()),
-    Computer(Race.Protoss, Difficulty.VeryEasy)
+    Computer(Race.Protoss, Difficulty.Medium)
 ], realtime=False)

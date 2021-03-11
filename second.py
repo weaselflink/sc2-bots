@@ -1,4 +1,3 @@
-from typing import List
 
 import sc2
 from sc2 import run_game, maps, Race, Difficulty
@@ -12,34 +11,44 @@ class SecondBot(sc2.BotAI):
     def worker_count(self) -> int:
         return self.units.of_type(UnitTypeId.SCV).amount
 
-    async def on_step(self, iteration):
-        cc = self.townhalls.first
+    def has_enemy_within(self, unit, dist):
+        for enemy in self.enemy_units.not_structure:
+            if enemy.distance_to(unit) < dist:
+                self.chat_send("enemy")
+                return True
+        self.chat_send("no enemy")
+        return False
 
-        for depot in self.units.of_type(UnitTypeId.SUPPLYDEPOT).ready:
-            for unit in self.enemy_units.not_structure:
-                if unit.position.to2.distance_to(depot.position.to2) < 15:
-                    break
+    async def update_depots(self):
+        for depot in self.structures(UnitTypeId.SUPPLYDEPOT).ready:
+            if not self.has_enemy_within(depot, 15):
+                depot(AbilityId.MORPH_SUPPLYDEPOT_LOWER)
+
+        for depot in self.structures(UnitTypeId.SUPPLYDEPOTLOWERED).ready:
+            if self.has_enemy_within(depot, 10):
+                depot(AbilityId.MORPH_SUPPLYDEPOT_RAISE)
+
+    async def build_depots(self):
+        depots: Units = self.structures({UnitTypeId.SUPPLYDEPOT, UnitTypeId.SUPPLYDEPOTLOWERED})
+        depot_placement_positions: Set[Point2] = self.main_base_ramp.corner_depots
+        if self.supply_left < 2 and self.can_afford(UnitTypeId.SUPPLYDEPOT) and not self.already_pending(UnitTypeId.SUPPLYDEPOT):
+            if depots.amount < 1:
+                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions.pop())
+            elif depots.amount < 2:
+                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions.pop())
             else:
-                self.do(depot(UnitTypeId.MORPH_SUPPLYDEPOT_LOWER))
+                await self.build(UnitTypeId.SUPPLYDEPOT, self.townhalls.first.position.towards(self.game_info.map_center, 8))
 
-        for depot in self.units.of_type(UnitTypeId.SUPPLYDEPOTLOWERED).ready:
-            for unit in self.enemy_units.not_structure:
-                if unit.position.to2.distance_to(depot.position.to2) < 10:
-                    self.do(depot(UnitTypeId.MORPH_SUPPLYDEPOT_RAISE))
-                    break
+    async def on_step(self, iteration):
+        await self.update_depots()
+        await self.build_depots()
 
         idle_ccs = self.townhalls.idle
         if self.supply_left > 0 and idle_ccs:
             idle_ccs.first.train(UnitTypeId.SCV, can_afford_check=True)
 
-        if self.can_afford(UnitTypeId.SUPPLYDEPOT) and not self.already_pending(UnitTypeId.SUPPLYDEPOT) and self.supply_left < 2:
-            if self.units.of_type(UnitTypeId.SUPPLYDEPOT).amount < 2:
-                await self.build(UnitTypeId.SUPPLYDEPOT, self.main_base_ramp.corner_depots.pop())
-            else:
-                await self.build(UnitTypeId.SUPPLYDEPOT, cc.position.towards(self.game_info.map_center, 8))
-
-        for scv in self.units.of_type(UnitTypeId.SCV).idle:
-            self.do(scv.gather(self.mineral_field.closest_to(cc)))
+        for scv in self.units(UnitTypeId.SCV).idle:
+            scv.gather(self.mineral_field.closest_to(self.townhalls.first))
 
 
 run_game(maps.get("AcropolisLE"), [

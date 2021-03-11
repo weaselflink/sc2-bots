@@ -14,9 +14,7 @@ class SecondBot(sc2.BotAI):
     def has_enemy_within(self, unit, dist):
         for enemy in self.enemy_units.not_structure:
             if enemy.distance_to(unit) < dist:
-                self.chat_send("enemy")
                 return True
-        self.chat_send("no enemy")
         return False
 
     async def update_depots(self):

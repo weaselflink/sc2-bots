@@ -134,17 +134,24 @@ class SecondBot(sc2.BotAI):
             self.inf_armor = 2
 
     async def control_marines(self):
-        enemies = (self.enemy_units + self.enemy_structures).visible
-        if enemies and self.units(UnitTypeId.MARINE):
-            for m in self.units(UnitTypeId.MARINE):
-                close_units = self.enemy_units.visible.closer_than(10, m)
-                if close_units:
-                    m.attack(close_units.closest_to(m))
-                else:
+        marines = self.units(UnitTypeId.MARINE)
+        if marines:
+            threats = self.enemy_units.visible
+            for e in threats:
+                if self.structures.closest_distance_to(e) < 30:
+                    for m in marines:
+                        m.attack(threats.closest_to(m))
+                    return
+
+            enemies = (self.enemy_units + self.enemy_structures).visible
+            if marines.amount >= 40 and enemies:
+                for m in marines:
                     m.attack(enemies.closest_to(m))
-        if not enemies and self.units(UnitTypeId.MARINE).amount >= 10:
-            for m in self.units(UnitTypeId.MARINE):
-                m.attack(self.enemy_start_locations[0])
+                    return
+
+            if marines.amount >= 12:
+                for m in marines:
+                    m.attack(self.enemy_start_locations[0])
 
     async def on_step(self, iteration: int):
         await self.update_depots()

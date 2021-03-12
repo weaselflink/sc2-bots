@@ -5,7 +5,6 @@ from sc2.player import Bot, Computer
 from sc2.constants import *
 from sc2.position import Point2
 from sc2.unit import Unit
-from sc2.units import Units
 
 
 class SecondBot(sc2.BotAI):
@@ -206,5 +205,5 @@ class SecondBot(sc2.BotAI):
 
 run_game(maps.get("AcropolisLE"), [
     Bot(Race.Terran, SecondBot()),
-    Computer(Race.Protoss, Difficulty.Medium)
+    Computer(Race.Random, Difficulty.Medium)
 ], realtime=False)

@@ -12,8 +12,8 @@ class SecondBot(sc2.BotAI):
 
     def _initialize_variables(self):
         super()._initialize_variables()
-        self.inf_weapons = 0
-        self.inf_armor = 0
+        self.inf_weapons: int = 0
+        self.inf_armor: int = 0
 
     def worker_count(self) -> int:
         return self.workers.amount

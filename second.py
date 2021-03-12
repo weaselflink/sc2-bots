@@ -9,6 +9,12 @@ from sc2.units import Units
 
 
 class SecondBot(sc2.BotAI):
+
+    def _initialize_variables(self):
+        super()._initialize_variables()
+        self.inf_weapons = 0
+        self.inf_armor = 0
+
     def worker_count(self) -> int:
         return self.workers.amount
 
@@ -52,23 +58,31 @@ class SecondBot(sc2.BotAI):
                 return True
         return False
 
-    async def upgrade_marines(self):
+    async def upgrade_infantry(self):
         ebay = self.structures(UnitTypeId.ENGINEERINGBAY)
+        factory = self.structures(UnitTypeId.FACTORY)
+        armory = self.structures(UnitTypeId.ARMORY)
         if ebay:
-            if self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
+            if self.inf_weapons == 1 and self.inf_armor == 1 and not factory and not self.already_pending(UnitTypeId.FACTORY):
+                await self.build(UnitTypeId.FACTORY, ebay.first)
+            if self.inf_weapons == 1 and self.inf_armor == 1 and factory and not armory and not self.already_pending(UnitTypeId.ARMORY):
+                await self.build(UnitTypeId.ARMORY, ebay.first)
+            if self.inf_weapons < 1 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
-            if self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
+            if self.inf_armor < 1 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
                 ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
-            if self.can_cast(ebay.first, AbilityId.RESEARCH_COMBATSHIELD):
-                ebay.first(AbilityId.RESEARCH_COMBATSHIELD)
-            if self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
+            if self.inf_weapons < 2 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
                 ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
-            if self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
+            if self.inf_armor < 2 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
                 ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
+            if self.inf_weapons < 3 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
+                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
+            if self.inf_armor < 3 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
+                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
 
     async def build_first_engineering_bay(self):
-        all_racks = self.structures(UnitTypeId.ENGINEERINGBAY)
-        if not all_racks and self.can_afford(UnitTypeId.ENGINEERINGBAY) and not self.already_pending(UnitTypeId.ENGINEERINGBAY):
+        ebay = self.structures(UnitTypeId.ENGINEERINGBAY)
+        if not ebay and self.can_afford(UnitTypeId.ENGINEERINGBAY) and not self.already_pending(UnitTypeId.ENGINEERINGBAY):
             await self.build(UnitTypeId.ENGINEERINGBAY, self.main_base().position.towards(self.game_info.map_center, 8))
             return True
         return False
@@ -106,14 +120,24 @@ class SecondBot(sc2.BotAI):
                     return True
         return False
 
-    async def on_step(self, iteration):
+    async def on_upgrade_complete(self, upgrade: UpgradeId):
+        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:
+            self.inf_weapons = 1
+        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL1:
+            self.inf_armor = 1
+        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL2:
+            self.inf_weapons = 2
+        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL2:
+            self.inf_armor = 2
+
+    async def on_step(self, iteration: int):
         await self.update_depots()
         await self.build_depots()
         await self.distribute_workers()
         await self.build_first_barracks()
         await self.build_first_engineering_bay()
         await self.build_refineries()
-        await self.upgrade_marines()
+        await self.upgrade_infantry()
 
         enemies = (self.enemy_units + self.enemy_structures).visible
         if enemies and self.units(UnitTypeId.MARINE):

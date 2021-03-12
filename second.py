@@ -9,11 +9,13 @@ from sc2.units import Units
 
 
 class SecondBot(sc2.BotAI):
+    def __init__(self):
+        super().__init__()
+        self.inf_weapons: int = 0
+        self.inf_armor: int = 0
 
     def _initialize_variables(self):
         super()._initialize_variables()
-        self.inf_weapons: int = 0
-        self.inf_armor: int = 0
 
     def worker_count(self) -> int:
         return self.workers.amount
@@ -123,16 +125,6 @@ class SecondBot(sc2.BotAI):
                     return True
         return False
 
-    async def on_upgrade_complete(self, upgrade: UpgradeId):
-        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:
-            self.inf_weapons = 1
-        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL1:
-            self.inf_armor = 1
-        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL2:
-            self.inf_weapons = 2
-        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL2:
-            self.inf_armor = 2
-
     async def control_marines(self):
         marines = self.units(UnitTypeId.MARINE)
         if marines:
@@ -152,6 +144,16 @@ class SecondBot(sc2.BotAI):
             if marines.amount >= 12:
                 for m in marines:
                     m.attack(self.enemy_start_locations[0])
+
+    async def on_upgrade_complete(self, upgrade: UpgradeId):
+        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:
+            self.inf_weapons = 1
+        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL1:
+            self.inf_armor = 1
+        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL2:
+            self.inf_weapons = 2
+        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL2:
+            self.inf_armor = 2
 
     async def on_step(self, iteration: int):
         await self.update_depots()

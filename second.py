@@ -17,13 +17,16 @@ class SecondBot(sc2.BotAI):
     def _initialize_variables(self):
         super()._initialize_variables()
 
+    def has_building(self, where: Union[Unit, Point2]):
+        return self.structures.closest_distance_to(where) < 0.5
+
     def worker_count(self) -> int:
         return self.workers.amount
 
     def main_base(self) -> Unit:
         return self.start_location.closest(self.townhalls)
 
-    def has_enemy_within(self, unit, dist):
+    def has_enemy_within(self, unit: Unit, dist: int):
         for enemy in self.enemy_units.not_structure:
             if enemy.distance_to(unit) < dist:
                 return True
@@ -39,13 +42,10 @@ class SecondBot(sc2.BotAI):
                 depot(AbilityId.MORPH_SUPPLYDEPOT_RAISE)
 
     async def build_depots(self):
-        depots: Units = self.structures({UnitTypeId.SUPPLYDEPOT, UnitTypeId.SUPPLYDEPOTLOWERED})
-        depot_placement_positions: Set[Point2] = self.main_base_ramp.corner_depots
+        depot_placement_positions = list([p for p in self.main_base_ramp.corner_depots if not self.has_building(p)])
         if self.supply_left < 2 and self.can_afford(UnitTypeId.SUPPLYDEPOT) and not self.already_pending(UnitTypeId.SUPPLYDEPOT):
-            if depots.amount < 1:
-                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions.pop())
-            elif depots.amount < 2:
-                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions.pop())
+            if depot_placement_positions:
+                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions[0])
             else:
                 await self.build(UnitTypeId.SUPPLYDEPOT, self.townhalls.first.position.towards(self.game_info.map_center, 8))
 
@@ -129,8 +129,8 @@ class SecondBot(sc2.BotAI):
         marines = self.units(UnitTypeId.MARINE)
         if marines:
             threats = self.enemy_units.visible
-            for e in threats:
-                if self.structures.closest_distance_to(e) < 30:
+            for t in threats:
+                if self.structures.closest_distance_to(t) < 30:
                     for m in marines:
                         m.attack(threats.closest_to(m))
                     return
@@ -141,9 +141,19 @@ class SecondBot(sc2.BotAI):
                     m.attack(enemies.closest_to(m))
                     return
 
+            target = self.enemy_start_locations[0]
+            marines_at_enemy_base = marines.closer_than(10, target)
+            if not enemies and marines_at_enemy_base.amount > 40:
+                candidates = list(filter(lambda e: not self.is_visible(e), self.expansion_locations_list))
+                if candidates:
+                    for m in marines:
+                        m.attack(candidates[0])
+                    return
+
             if marines.amount >= 12:
                 for m in marines:
-                    m.attack(self.enemy_start_locations[0])
+                    if m.distance_to(target) > 5:
+                        m.attack(target)
 
     async def on_upgrade_complete(self, upgrade: UpgradeId):
         if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:

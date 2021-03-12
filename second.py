@@ -1,6 +1,6 @@
 
 import sc2
-from sc2 import run_game, maps, Race, Difficulty
+from sc2 import run_game, maps, Race, Difficulty, Union
 from sc2.player import Bot, Computer
 from sc2.constants import *
 from sc2.position import Point2
@@ -61,12 +61,11 @@ class SecondBot(sc2.BotAI):
     async def upgrade_infantry(self):
         ebay = self.structures(UnitTypeId.ENGINEERINGBAY)
         factory = self.structures(UnitTypeId.FACTORY)
-        armory = self.structures(UnitTypeId.ARMORY)
         if ebay:
-            if self.inf_weapons == 1 and self.inf_armor == 1 and not factory and not self.already_pending(UnitTypeId.FACTORY):
-                await self.build(UnitTypeId.FACTORY, ebay.first)
-            if self.inf_weapons == 1 and self.inf_armor == 1 and factory and not armory and not self.already_pending(UnitTypeId.ARMORY):
-                await self.build(UnitTypeId.ARMORY, ebay.first)
+            if self.inf_weapons == 1 and self.inf_armor == 1:
+                await self.fulfill_building_need(UnitTypeId.FACTORY, ebay.first)
+            if self.inf_weapons == 1 and self.inf_armor == 1 and factory:
+                await self.fulfill_building_need(UnitTypeId.ARMORY, ebay.first)
             if self.inf_weapons < 1 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
             if self.inf_armor < 1 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
@@ -80,12 +79,16 @@ class SecondBot(sc2.BotAI):
             if self.inf_armor < 3 and self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
                 ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
 
-    async def build_first_engineering_bay(self):
-        ebay = self.structures(UnitTypeId.ENGINEERINGBAY)
-        if not ebay and self.can_afford(UnitTypeId.ENGINEERINGBAY) and not self.already_pending(UnitTypeId.ENGINEERINGBAY):
-            await self.build(UnitTypeId.ENGINEERINGBAY, self.main_base().position.towards(self.game_info.map_center, 8))
+    async def fulfill_building_need(self, building_type: UnitTypeId, near: Union[Unit, Point2]):
+        buildings = self.structures(building_type)
+        if not buildings and not self.already_pending(building_type):
+            await self.build(building_type, near)
             return True
         return False
+
+    async def build_first_engineering_bay(self):
+        near = self.main_base().position.towards(self.game_info.map_center, 8)
+        await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, near)
 
     async def build_expansions(self):
         if self.can_afford(UnitTypeId.COMMANDCENTER) and not self.already_pending(UnitTypeId.COMMANDCENTER):
@@ -130,15 +133,7 @@ class SecondBot(sc2.BotAI):
         if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL2:
             self.inf_armor = 2
 
-    async def on_step(self, iteration: int):
-        await self.update_depots()
-        await self.build_depots()
-        await self.distribute_workers()
-        await self.build_first_barracks()
-        await self.build_first_engineering_bay()
-        await self.build_refineries()
-        await self.upgrade_infantry()
-
+    async def control_marines(self):
         enemies = (self.enemy_units + self.enemy_structures).visible
         if enemies and self.units(UnitTypeId.MARINE):
             for m in self.units(UnitTypeId.MARINE):
@@ -147,11 +142,19 @@ class SecondBot(sc2.BotAI):
                     m.attack(close_units.closest_to(m))
                 else:
                     m.attack(enemies.closest_to(m))
-
         if not enemies and self.units(UnitTypeId.MARINE).amount >= 10:
             for m in self.units(UnitTypeId.MARINE):
                 m.attack(self.enemy_start_locations[0])
 
+    async def on_step(self, iteration: int):
+        await self.update_depots()
+        await self.build_depots()
+        await self.distribute_workers()
+        await self.build_first_barracks()
+        await self.build_first_engineering_bay()
+        await self.build_refineries()
+        await self.upgrade_infantry()
+        await self.control_marines()
         await self.build_expansions()
         await self.build_planetary_fortress()
 

@@ -114,9 +114,9 @@ class SecondBot(SpinBot):
             return False
         if self.can_afford(UnitTypeId.REFINERY):
             if self.townhalls.ready.amount * 2 > self.structures(UnitTypeId.REFINERY).amount:
-                need_refinery = self.townhalls.ready.filter(lambda t: self.empty_geysers(t).amount > 0)
+                need_refinery = self.townhalls.ready.filter(lambda t: self.free_geysers(t).amount > 0)
                 if need_refinery:
-                    await self.build(UnitTypeId.REFINERY, self.empty_geysers(need_refinery.random).random)
+                    await self.build(UnitTypeId.REFINERY, self.free_geysers(need_refinery.random).random)
                     return True
         return False
 

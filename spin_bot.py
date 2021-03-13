@@ -12,7 +12,7 @@ class SpinBot(sc2.BotAI):
     def main_base(self) -> Unit:
         return self.start_location.closest(self.townhalls)
 
-    def empty_geysers(self, base):
+    def free_geysers(self, base):
         base_geysers = self.vespene_geyser.closer_than(20, base)
         base_refineries = self.gas_buildings.closer_than(20, base)
         if base_refineries:

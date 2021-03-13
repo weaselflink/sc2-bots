@@ -1,13 +1,14 @@
 import random
 
-import sc2
 from sc2 import Union
 from sc2.constants import *
 from sc2.position import Point2
 from sc2.unit import Unit
 
+from spin_bot import SpinBot
 
-class SecondBot(sc2.BotAI):
+
+class SecondBot(SpinBot):
     def __init__(self):
         super().__init__()
         self.inf_weapons: int = 0
@@ -20,14 +21,8 @@ class SecondBot(sc2.BotAI):
     def _initialize_variables(self):
         super()._initialize_variables()
 
-    def has_building(self, where: Union[Unit, Point2]):
-        return self.structures.closest_distance_to(where) < 0.5
-
     def worker_count(self) -> int:
         return self.workers.amount
-
-    def main_base(self) -> Unit:
-        return self.start_location.closest(self.townhalls)
 
     def has_enemy_within(self, unit: Unit, dist: int):
         for enemy in self.enemy_units.not_structure:
@@ -114,27 +109,15 @@ class SecondBot(sc2.BotAI):
         return False
 
     async def build_refineries(self):
-        if self.townhalls.ready.amount > 1 and self.can_afford(UnitTypeId.REFINERY):
-            empty_main_base_geysers = self.empty_geysers(self.main_base())
-            if empty_main_base_geysers:
-                location = empty_main_base_geysers.first
-                await self.build(UnitTypeId.REFINERY, location)
-                return True
-        if self.townhalls.ready.amount * 2 > self.structures(UnitTypeId.REFINERY).amount and self.can_afford(UnitTypeId.REFINERY):
-            need_refinery = self.townhalls.ready.filter(lambda t: self.empty_geysers(t).amount > 0)
-            if need_refinery:
-                await self.build(UnitTypeId.REFINERY, need_refinery.random)
-                return True
-
+        if self.townhalls.ready.amount < 2:
+            return False
+        if self.can_afford(UnitTypeId.REFINERY):
+            if self.townhalls.ready.amount * 2 > self.structures(UnitTypeId.REFINERY).amount:
+                need_refinery = self.townhalls.ready.filter(lambda t: self.empty_geysers(t).amount > 0)
+                if need_refinery:
+                    await self.build(UnitTypeId.REFINERY, self.empty_geysers(need_refinery.random).random)
+                    return True
         return False
-
-    def empty_geysers(self, base):
-        base_geysers = self.vespene_geyser.closer_than(20, base)
-        base_refineries = self.structures(UnitTypeId.REFINERY).closer_than(20, base)
-        if base_refineries:
-            return base_geysers.filter(lambda g: base_refineries.closest_distance_to(g) > 1)
-        else:
-            return base_geysers
 
     async def build_planetary_fortress(self):
         if self.structures(UnitTypeId.ENGINEERINGBAY):

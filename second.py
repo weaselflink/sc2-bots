@@ -6,6 +6,7 @@ from sc2.constants import *
 from sc2.position import Point2
 from sc2.unit import Unit
 
+
 class SecondBot(sc2.BotAI):
     def __init__(self):
         super().__init__()
@@ -83,7 +84,7 @@ class SecondBot(sc2.BotAI):
                 await self.fulfill_building_need(UnitTypeId.STARPORT, ebay.first)
             if self.inf_weapons < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
-                await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, ebay.first)
+                await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, ebay.first, 2)
             if self.inf_armor < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
             if self.inf_weapons < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
@@ -95,9 +96,9 @@ class SecondBot(sc2.BotAI):
             if self.inf_armor < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
 
-    async def fulfill_building_need(self, building_type: UnitTypeId, near: Union[Unit, Point2]):
+    async def fulfill_building_need(self, building_type: UnitTypeId, near: Union[Unit, Point2], count: int = 1):
         buildings = self.structures(building_type)
-        if not buildings and not self.already_pending(building_type):
+        if buildings.amount < count and not self.already_pending(building_type):
             await self.build(building_type, near)
             return True
         return False
@@ -119,8 +120,8 @@ class SecondBot(sc2.BotAI):
                 location = empty_main_base_geysers.first
                 await self.build(UnitTypeId.REFINERY, location)
                 return True
-        if self.townhalls.ready.amount - 1 > self.structures(UnitTypeId.REFINERY).amount * 2 and self.can_afford(UnitTypeId.REFINERY):
-            need_refinery = self.townhalls.ready.filter(lambda t: self.structures(UnitTypeId.REFINERY).closer_than(25, t).amount < 2)
+        if self.townhalls.ready.amount * 2 > self.structures(UnitTypeId.REFINERY).amount and self.can_afford(UnitTypeId.REFINERY):
+            need_refinery = self.townhalls.ready.filter(lambda t: self.empty_geysers(t).amount > 0)
             if need_refinery:
                 await self.build(UnitTypeId.REFINERY, need_refinery.random)
 
@@ -191,7 +192,6 @@ class SecondBot(sc2.BotAI):
         if self.hard_counter_seen and self.structures(UnitTypeId.STARPORT).amount < 2 and not self.already_pending(UnitTypeId.STARPORT):
             await self.build(UnitTypeId.STARPORT, self.structures(UnitTypeId.ENGINEERINGBAY).first)
 
-
     async def on_upgrade_complete(self, upgrade: UpgradeId):
         if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:
             self.inf_weapons = 1
@@ -216,6 +216,7 @@ class SecondBot(sc2.BotAI):
         await self.build_refineries()
         await self.upgrade_infantry()
         await self.control_marines()
+        await self.control_vikings()
         await self.build_expansions()
         await self.build_planetary_fortress()
         await self.counter_counter()
@@ -246,6 +247,3 @@ class SecondBot(sc2.BotAI):
             idle_barracks = self.structures(UnitTypeId.BARRACKS).idle
             if idle_barracks and self.units(UnitTypeId.MARINE).amount < 90:
                 idle_barracks.random.train(UnitTypeId.MARINE, can_afford_check=True)
-
-        for scv in self.workers.idle:
-            scv.gather(self.mineral_field.closest_to(self.townhalls.first))

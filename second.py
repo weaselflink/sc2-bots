@@ -4,6 +4,7 @@ from sc2 import Union
 from sc2.constants import *
 from sc2.position import Point2
 from sc2.unit import Unit
+from sc2.units import Units
 
 from spin_bot import SpinBot
 
@@ -30,6 +31,14 @@ class SecondBot(SpinBot):
             if enemy.distance_to(unit) < dist:
                 return True
         return False
+
+    @staticmethod
+    def center(units: Units) -> Unit:
+        avg = Point2([0, 0])
+        for u in units:
+            avg += u.position
+        avg /= units.amount
+        return units.closest_to(avg)
 
     async def update_depots(self):
         for depot in self.structures(UnitTypeId.SUPPLYDEPOT).ready:
@@ -156,6 +165,13 @@ class SecondBot(SpinBot):
                 for m in marines:
                     if m.distance_to(self.main_target) > 5:
                         m.attack(self.main_target)
+                return
+
+            rally_point = self.center(marines).position
+            for m in marines:
+                if m.distance_to(rally_point) > 5:
+                    m.move(rally_point)
+
 
     async def control_vikings(self):
         vikings = self.units(UnitTypeId.VIKINGFIGHTER)

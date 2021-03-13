@@ -6,6 +6,10 @@ from sc2.units import Units
 
 
 class SpinBot(sc2.BotAI):
+    def __init__(self):
+        super().__init__()
+        self.game_minutes: float = 0
+
     def has_building(self, where: sc2.Union[Unit, Point2]) -> bool:
         return self.structures.closest_distance_to(where) < 0.5
 
@@ -29,4 +33,4 @@ class SpinBot(sc2.BotAI):
         return units.closest_to(avg)
 
     async def on_step(self, iteration: int):
-        pass
+        self.game_minutes = (self.state.game_loop / 22.4) / 60

@@ -13,7 +13,6 @@ class SecondBot(SpinBot):
         super().__init__()
         self.inf_weapons: int = 0
         self.inf_armor: int = 0
-        self.game_minutes: float = 0
         self.main_target: Point2 = Point2()
         self.hard_counter_seen: bool = False
         self.hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
@@ -204,7 +203,7 @@ class SecondBot(SpinBot):
         self.main_target = self.enemy_start_locations[0]
 
     async def on_step(self, iteration: int):
-        self.game_minutes = (self.state.game_loop / 22.4) / 60
+        await super().on_step(iteration)
 
         await self.update_depots()
         await self.build_depots()

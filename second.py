@@ -18,9 +18,6 @@ class SecondBot(SpinBot):
         self.hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
         self.units_took_damage: set[int] = set()
 
-    def _initialize_variables(self):
-        super()._initialize_variables()
-
     def worker_count(self) -> int:
         return self.workers.amount
 

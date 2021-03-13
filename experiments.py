@@ -4,7 +4,7 @@ from sc2.constants import *
 from spin_bot import SpinBot
 
 
-class FirstBot(SpinBot):
+class ExperimentBot(SpinBot):
 
     async def build_depots(self):
         if self.supply_left < 2 and self.can_afford(UnitTypeId.SUPPLYDEPOT) and not self.already_pending(UnitTypeId.SUPPLYDEPOT):

@@ -74,25 +74,28 @@ class SecondBot(sc2.BotAI):
         tech_labs = self.structures(UnitTypeId.BARRACKSTECHLAB)
         if tech_labs:
             tech_lab = tech_labs.random
-            if self.can_cast(tech_lab, AbilityId.RESEARCH_COMBATSHIELD):
+            if await self.can_cast(tech_lab, AbilityId.RESEARCH_COMBATSHIELD):
                 tech_lab(AbilityId.RESEARCH_COMBATSHIELD)
-        if ebay:
-            if self.inf_weapons == 1 and self.inf_armor == 1:
+        if ebay.idle:
+            if self.inf_weapons == 1:
                 await self.fulfill_building_need(UnitTypeId.FACTORY, ebay.first)
-            if self.inf_weapons == 1 and self.inf_armor == 1 and factory:
+            if self.inf_weapons == 1 and factory:
                 await self.fulfill_building_need(UnitTypeId.ARMORY, ebay.first)
+            if factory:
+                await self.fulfill_building_need(UnitTypeId.STARPORT, ebay.first)
             if self.inf_weapons < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
-                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
+                ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
+                await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, ebay.first)
             if self.inf_armor < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
-                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
+                ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
             if self.inf_weapons < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
-                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
+                ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
             if self.inf_armor < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
-                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
+                ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
             if self.inf_weapons < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
-                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
+                ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
             if self.inf_armor < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
-                ebay.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
+                ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
 
     async def fulfill_building_need(self, building_type: UnitTypeId, near: Union[Unit, Point2]):
         buildings = self.structures(building_type)
@@ -231,15 +234,15 @@ class SecondBot(sc2.BotAI):
         if self.supply_left > 0:
             idle_ccs = self.townhalls.idle
             if idle_ccs and self.worker_count() < 100:
-                idle_ccs.first.train(UnitTypeId.SCV, can_afford_check=True)
+                idle_ccs.random.train(UnitTypeId.SCV, can_afford_check=True)
 
             idle_starports = self.structures(UnitTypeId.STARPORT).idle
-            if idle_starports and self.units(UnitTypeId.VIKING).amount < 10:
-                idle_starports.first.train(UnitTypeId.VIKING, can_afford_check=True)
+            #if idle_starports and self.units(UnitTypeId.VIKING).amount < 10:
+                #idle_starports.random.train(UnitTypeId.VIKING, can_afford_check=True)
 
             idle_barracks = self.structures(UnitTypeId.BARRACKS).idle
             if idle_barracks and self.units(UnitTypeId.MARINE).amount < 100:
-                idle_barracks.first.train(UnitTypeId.MARINE, can_afford_check=True)
+                idle_barracks.random.train(UnitTypeId.MARINE, can_afford_check=True)
 
         for scv in self.workers.idle:
             scv.gather(self.mineral_field.closest_to(self.townhalls.first))

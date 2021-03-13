@@ -110,7 +110,7 @@ class SecondBot(SpinBot):
         return False
 
     async def build_refineries(self):
-        if self.townhalls.ready.amount < 2:
+        if self.townhalls.amount < 2:
             return False
         if self.can_afford(UnitTypeId.REFINERY):
             if self.townhalls.ready.amount * 2 > self.structures(UnitTypeId.REFINERY).amount:

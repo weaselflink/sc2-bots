@@ -124,12 +124,13 @@ class SecondBot(sc2.BotAI):
             need_refinery = self.townhalls.ready.filter(lambda t: self.empty_geysers(t).amount > 0)
             if need_refinery:
                 await self.build(UnitTypeId.REFINERY, need_refinery.random)
+                return True
 
         return False
 
     def empty_geysers(self, base):
-        base_geysers = self.vespene_geyser.closer_than(25, base)
-        base_refineries = self.structures(UnitTypeId.REFINERY).closer_than(25, base)
+        base_geysers = self.vespene_geyser.closer_than(20, base)
+        base_refineries = self.structures(UnitTypeId.REFINERY).closer_than(20, base)
         if base_refineries:
             return base_geysers.filter(lambda g: base_refineries.closest_distance_to(g) > 1)
         else:

@@ -50,7 +50,7 @@ class SecondBot(SpinBot):
             if not racks:
                 await self.build(UnitTypeId.BARRACKS, self.main_base_ramp.barracks_in_middle)
                 return True
-            if racks and self.units(UnitTypeId.MARINE).amount < 40 and self.minerals > 400 and self.structures(UnitTypeId.ENGINEERINGBAY):
+            elif self.units(UnitTypeId.MARINE).amount < 40 and self.minerals > 400 and self.structures(UnitTypeId.ENGINEERINGBAY):
                 await self.build(UnitTypeId.BARRACKS, self.structures(UnitTypeId.ENGINEERINGBAY).first)
                 return True
         return False

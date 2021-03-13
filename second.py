@@ -156,7 +156,6 @@ class SecondBot(SpinBot):
                 if m.distance_to(rally_point) > 5:
                     m.move(rally_point)
 
-
     async def control_vikings(self):
         vikings = self.units(UnitTypeId.VIKINGFIGHTER)
         if vikings:
@@ -177,8 +176,9 @@ class SecondBot(SpinBot):
     async def counter_counter(self):
         if self.enemy_units(self.hard_counter_types):
             self.hard_counter_seen = True
-        if self.hard_counter_seen and self.structures(UnitTypeId.STARPORT).amount < 2 and not self.already_pending(UnitTypeId.STARPORT):
-            await self.build(UnitTypeId.STARPORT, self.structures(UnitTypeId.ENGINEERINGBAY).first)
+        if self.hard_counter_seen:
+            first_ebay = self.structures(UnitTypeId.ENGINEERINGBAY).first
+            await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, first_ebay, 2)
 
     async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float):
         self.units_took_damage.add(unit.tag)

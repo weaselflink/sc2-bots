@@ -18,9 +18,6 @@ class SecondBot(SpinBot):
         self.hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
         self.units_took_damage: set[int] = set()
 
-    def worker_count(self) -> int:
-        return self.workers.amount
-
     def has_enemy_within(self, unit: Unit, dist: int):
         for enemy in self.enemy_units.not_structure:
             if enemy.distance_to(unit) < dist:
@@ -231,7 +228,7 @@ class SecondBot(SpinBot):
 
         if self.supply_left > 0:
             idle_ccs = self.townhalls.idle
-            if idle_ccs and self.worker_count() < 90:
+            if idle_ccs and self.workers.amount < 90:
                 idle_ccs.random.train(UnitTypeId.SCV, can_afford_check=True)
 
             idle_starports = self.structures(UnitTypeId.STARPORT).idle

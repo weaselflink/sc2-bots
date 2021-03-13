@@ -1,5 +1,6 @@
 
 import sc2
+from sc2 import UnitTypeId, Union
 from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
@@ -23,6 +24,13 @@ class SpinBot(sc2.BotAI):
             return base_geysers.filter(lambda g: base_refineries.closest_distance_to(g) > 1)
         else:
             return base_geysers
+
+    async def fulfill_building_need(self, building_type: UnitTypeId, near: Union[Unit, Point2], count: int = 1):
+        buildings = self.structures(building_type)
+        if buildings.amount < count and not self.already_pending(building_type):
+            await self.build(building_type, near)
+            return True
+        return False
 
     @staticmethod
     def center(units: Units) -> Unit:

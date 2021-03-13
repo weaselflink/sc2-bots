@@ -1,6 +1,5 @@
 import random
 
-from sc2 import Union
 from sc2.constants import *
 from sc2.position import Point2
 from sc2.unit import Unit
@@ -84,13 +83,6 @@ class SecondBot(SpinBot):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
             if self.inf_armor < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
-
-    async def fulfill_building_need(self, building_type: UnitTypeId, near: Union[Unit, Point2], count: int = 1):
-        buildings = self.structures(building_type)
-        if buildings.amount < count and not self.already_pending(building_type):
-            await self.build(building_type, near)
-            return True
-        return False
 
     async def build_first_engineering_bay(self):
         near = self.main_base().position.towards(self.game_info.map_center, 8)

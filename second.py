@@ -17,6 +17,7 @@ class SecondBot(SpinBot):
         self.main_target: Point2 = Point2()
         self.hard_counter_seen: bool = False
         self.hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
+        self.units_took_damage: set[int] = set()
 
     def _initialize_variables(self):
         super()._initialize_variables()
@@ -169,12 +170,18 @@ class SecondBot(SpinBot):
                 for v in vikings:
                     v.attack(secondary_targets.closest_to(v))
                 return
+            for v in vikings:
+                if v.tag in self.units_took_damage:
+                    v.move(v.position.towards(self.start_location, 5))
 
     async def counter_counter(self):
         if self.enemy_units(self.hard_counter_types):
             self.hard_counter_seen = True
         if self.hard_counter_seen and self.structures(UnitTypeId.STARPORT).amount < 2 and not self.already_pending(UnitTypeId.STARPORT):
             await self.build(UnitTypeId.STARPORT, self.structures(UnitTypeId.ENGINEERINGBAY).first)
+
+    async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float):
+        self.units_took_damage.add(unit.tag)
 
     async def on_upgrade_complete(self, upgrade: UpgradeId):
         if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:
@@ -231,3 +238,5 @@ class SecondBot(SpinBot):
             idle_barracks = self.structures(UnitTypeId.BARRACKS).idle
             if idle_barracks and self.units(UnitTypeId.MARINE).amount < 90:
                 idle_barracks.random.train(UnitTypeId.MARINE, can_afford_check=True)
+
+        self.units_took_damage.clear()

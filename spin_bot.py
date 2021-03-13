@@ -2,6 +2,7 @@
 import sc2
 from sc2.position import Point2
 from sc2.unit import Unit
+from sc2.units import Units
 
 
 class SpinBot(sc2.BotAI):
@@ -18,6 +19,14 @@ class SpinBot(sc2.BotAI):
             return base_geysers.filter(lambda g: base_refineries.closest_distance_to(g) > 1)
         else:
             return base_geysers
+
+    @staticmethod
+    def center(units: Units) -> Unit:
+        avg = Point2([0, 0])
+        for u in units:
+            avg += u.position
+        avg /= units.amount
+        return units.closest_to(avg)
 
     async def on_step(self, iteration: int):
         pass

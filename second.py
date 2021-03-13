@@ -4,7 +4,6 @@ from sc2 import Union
 from sc2.constants import *
 from sc2.position import Point2
 from sc2.unit import Unit
-from sc2.units import Units
 
 from spin_bot import SpinBot
 
@@ -31,14 +30,6 @@ class SecondBot(SpinBot):
             if enemy.distance_to(unit) < dist:
                 return True
         return False
-
-    @staticmethod
-    def center(units: Units) -> Unit:
-        avg = Point2([0, 0])
-        for u in units:
-            avg += u.position
-        avg /= units.amount
-        return units.closest_to(avg)
 
     async def update_depots(self):
         for depot in self.structures(UnitTypeId.SUPPLYDEPOT).ready:
@@ -80,16 +71,16 @@ class SecondBot(SpinBot):
             tech_lab = tech_labs.random
             if await self.can_cast(tech_lab, AbilityId.RESEARCH_COMBATSHIELD):
                 tech_lab(AbilityId.RESEARCH_COMBATSHIELD)
-        if ebay.idle:
-            if self.inf_weapons == 1:
-                await self.fulfill_building_need(UnitTypeId.FACTORY, ebay.first)
-            if self.inf_weapons == 1 and factory:
+        if ebay:
+            await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, ebay.first, 2)
+            await self.fulfill_building_need(UnitTypeId.FACTORY, ebay.first)
+            if factory:
                 await self.fulfill_building_need(UnitTypeId.ARMORY, ebay.first)
             if factory:
                 await self.fulfill_building_need(UnitTypeId.STARPORT, ebay.first)
+        if ebay.idle:
             if self.inf_weapons < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
-                await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, ebay.first, 2)
             if self.inf_armor < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
             if self.inf_weapons < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):

@@ -1,12 +1,10 @@
 import random
 
 import sc2
-from sc2 import run_game, maps, Race, Difficulty, Union
-from sc2.player import Bot, Computer
+from sc2 import Union
 from sc2.constants import *
 from sc2.position import Point2
 from sc2.unit import Unit
-
 
 class SecondBot(sc2.BotAI):
     def __init__(self):
@@ -121,6 +119,11 @@ class SecondBot(sc2.BotAI):
                 location = empty_main_base_geysers.first
                 await self.build(UnitTypeId.REFINERY, location)
                 return True
+        if self.townhalls.ready.amount - 1 > self.structures(UnitTypeId.REFINERY).amount * 2 and self.can_afford(UnitTypeId.REFINERY):
+            need_refinery = self.townhalls.ready.filter(lambda t: self.structures(UnitTypeId.REFINERY).closer_than(25, t).amount < 2)
+            if need_refinery:
+                await self.build(UnitTypeId.REFINERY, need_refinery.random)
+
         return False
 
     def empty_geysers(self, base):
@@ -169,7 +172,7 @@ class SecondBot(sc2.BotAI):
                         m.attack(self.main_target)
 
     async def control_vikings(self):
-        vikings = self.units(UnitTypeId.VIKING)
+        vikings = self.units(UnitTypeId.VIKINGFIGHTER)
         if vikings:
             main_targets = self.enemy_units(self.hard_counter_types).visible
             if main_targets:
@@ -233,22 +236,16 @@ class SecondBot(sc2.BotAI):
 
         if self.supply_left > 0:
             idle_ccs = self.townhalls.idle
-            if idle_ccs and self.worker_count() < 100:
+            if idle_ccs and self.worker_count() < 90:
                 idle_ccs.random.train(UnitTypeId.SCV, can_afford_check=True)
 
             idle_starports = self.structures(UnitTypeId.STARPORT).idle
-            #if idle_starports and self.units(UnitTypeId.VIKING).amount < 10:
-                #idle_starports.random.train(UnitTypeId.VIKING, can_afford_check=True)
+            if idle_starports and self.units(UnitTypeId.VIKINGFIGHTER).amount < 10:
+                idle_starports.random.train(UnitTypeId.VIKINGFIGHTER, can_afford_check=True)
 
             idle_barracks = self.structures(UnitTypeId.BARRACKS).idle
-            if idle_barracks and self.units(UnitTypeId.MARINE).amount < 100:
+            if idle_barracks and self.units(UnitTypeId.MARINE).amount < 90:
                 idle_barracks.random.train(UnitTypeId.MARINE, can_afford_check=True)
 
         for scv in self.workers.idle:
             scv.gather(self.mineral_field.closest_to(self.townhalls.first))
-
-
-run_game(maps.get("AcropolisLE"), [
-    Bot(Race.Terran, SecondBot()),
-    Computer(Race.Random, Difficulty.Hard)
-], realtime=False)

@@ -1,8 +1,7 @@
 from typing import List
 
 import sc2
-from sc2 import run_game, maps, Race, Difficulty, UnitTypeId
-from sc2.player import Bot, Computer
+from sc2 import UnitTypeId
 from sc2.position import Point2
 from sc2.units import Units
 
@@ -61,9 +60,3 @@ class FirstBot(sc2.BotAI):
         self.scatter_overlords()
         self.drone_up()
         await self.build_spawning_pool()
-
-
-run_game(maps.get("AcropolisLE"), [
-    Bot(Race.Zerg, FirstBot()),
-    Computer(Race.Protoss, Difficulty.VeryEasy)
-], realtime=True)

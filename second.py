@@ -175,6 +175,40 @@ class SecondBot(SpinBot):
                 if v.tag in self.units_took_damage:
                     v.move(v.position.towards(self.start_location, 5))
 
+    async def control_medivacs(self):
+        medivacs = self.units(UnitTypeId.MEDIVAC)
+        if medivacs:
+            marines = self.units(UnitTypeId.MARINE)
+            injured_marines = marines.filter(lambda i: i.health < i.health_max)
+            if injured_marines:
+                for m in medivacs:
+                    target = injured_marines.closest_to(m)
+                    if (target.distance_to(m)) > 3:
+                        m.move(m.position.towards(target, 2))
+            elif marines:
+                for m in medivacs:
+                    target = marines.closest_to(m)
+                    if (target.distance_to(m)) > 3:
+                        m.move(m.position.towards(target, 2))
+
+    async def production(self):
+        if self.supply_left > 0:
+            idle_ccs = self.townhalls.idle
+            if idle_ccs and self.workers.amount < 90:
+                idle_ccs.random.train(UnitTypeId.SCV, can_afford_check=True)
+
+            marines = self.units(UnitTypeId.MARINE)
+            idle_starports = self.structures(UnitTypeId.STARPORT).idle
+            if idle_starports:
+                if self.units(UnitTypeId.MEDIVAC).amount < marines.amount / 8:
+                    idle_starports.random.train(UnitTypeId.MEDIVAC, can_afford_check=True)
+                elif self.units(UnitTypeId.VIKINGFIGHTER).amount < 10:
+                    idle_starports.random.train(UnitTypeId.VIKINGFIGHTER, can_afford_check=True)
+
+            idle_barracks = self.structures(UnitTypeId.BARRACKS).idle
+            if idle_barracks and self.units(UnitTypeId.MARINE).amount < 90:
+                idle_barracks.random.train(UnitTypeId.MARINE, can_afford_check=True)
+
     async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float):
         self.units_took_damage.add(unit.tag)
 
@@ -198,17 +232,19 @@ class SecondBot(SpinBot):
     async def on_step(self, iteration: int):
         await super().on_step(iteration)
 
-        await self.update_depots()
-        await self.build_depots()
-        await self.distribute_workers()
-        await self.build_barracks()
-        await self.build_first_engineering_bay()
-        await self.build_refineries()
-        await self.upgrade_infantry()
+        if self.state.game_loop % 5 == 0:
+            await self.update_depots()
+            await self.build_depots()
+            await self.distribute_workers()
+            await self.build_barracks()
+            await self.build_first_engineering_bay()
+            await self.build_refineries()
+            await self.upgrade_infantry()
+            await self.build_expansions()
+            await self.build_planetary_fortress()
         await self.control_marines()
         await self.control_vikings()
-        await self.build_expansions()
-        await self.build_planetary_fortress()
+        await self.control_medivacs()
 
         for cc in self.townhalls:
             if cc.health < cc.health_max:
@@ -224,17 +260,6 @@ class SecondBot(SpinBot):
                             aw.repair(cc)
                 break
 
-        if self.supply_left > 0:
-            idle_ccs = self.townhalls.idle
-            if idle_ccs and self.workers.amount < 90:
-                idle_ccs.random.train(UnitTypeId.SCV, can_afford_check=True)
-
-            idle_starports = self.structures(UnitTypeId.STARPORT).idle
-            if idle_starports and self.units(UnitTypeId.VIKINGFIGHTER).amount < 10:
-                idle_starports.random.train(UnitTypeId.VIKINGFIGHTER, can_afford_check=True)
-
-            idle_barracks = self.structures(UnitTypeId.BARRACKS).idle
-            if idle_barracks and self.units(UnitTypeId.MARINE).amount < 90:
-                idle_barracks.random.train(UnitTypeId.MARINE, can_afford_check=True)
+        await self.production()
 
         self.units_took_damage.clear()

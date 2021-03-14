@@ -47,7 +47,6 @@ class SecondBot(SpinBot):
         if racks.amount > 2:
             if not self.structures(UnitTypeId.BARRACKSTECHLAB) and not self.already_pending(UnitTypeId.BARRACKSTECHLAB):
                 racks.random(AbilityId.BUILD_TECHLAB)
-                return True
         if self.can_afford(UnitTypeId.BARRACKS) and not self.already_pending(UnitTypeId.BARRACKS):
             if not racks:
                 await self.build(UnitTypeId.BARRACKS, self.main_base_ramp.barracks_in_middle)

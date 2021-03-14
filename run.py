@@ -5,6 +5,6 @@ from second import SecondBot
 
 run_game(
     maps.get("AcropolisLE"),
-    [Bot(Race.Terran, SecondBot()), Computer(Race.Random, Difficulty.Hard)],
+    [Bot(Race.Terran, SecondBot()), Computer(Race.Zerg, Difficulty.Hard)],
     realtime=False
 )

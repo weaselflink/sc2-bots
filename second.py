@@ -13,7 +13,6 @@ class SecondBot(SpinBot):
         self.inf_weapons: int = 0
         self.inf_armor: int = 0
         self.main_target: Point2 = Point2()
-        self.hard_counter_seen: bool = False
         self.hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
         self.units_took_damage: set[int] = set()
 
@@ -37,8 +36,11 @@ class SecondBot(SpinBot):
         if self.supply_left < 2 and self.can_afford(UnitTypeId.SUPPLYDEPOT) and not self.already_pending(UnitTypeId.SUPPLYDEPOT):
             if depot_placement_positions:
                 await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions[0])
+                return True
             else:
                 await self.build(UnitTypeId.SUPPLYDEPOT, self.townhalls.first.position.towards(self.game_info.map_center, 8))
+                return True
+        return False
 
     async def build_barracks(self):
         racks = self.structures(UnitTypeId.BARRACKS)
@@ -170,13 +172,6 @@ class SecondBot(SpinBot):
                 if v.tag in self.units_took_damage:
                     v.move(v.position.towards(self.start_location, 5))
 
-    async def counter_counter(self):
-        if self.enemy_units(self.hard_counter_types):
-            self.hard_counter_seen = True
-        if self.hard_counter_seen:
-            first_ebay = self.structures(UnitTypeId.ENGINEERINGBAY).first
-            await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, first_ebay, 2)
-
     async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float):
         self.units_took_damage.add(unit.tag)
 
@@ -211,7 +206,6 @@ class SecondBot(SpinBot):
         await self.control_vikings()
         await self.build_expansions()
         await self.build_planetary_fortress()
-        await self.counter_counter()
 
         for cc in self.townhalls:
             if cc.health < cc.health_max:

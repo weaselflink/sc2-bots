@@ -85,8 +85,8 @@ class SecondBot(SpinBot):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
             elif self.inf_weapons == 3 and await self.can_cast(ebay.first, AbilityId.RESEARCH_HISECAUTOTRACKING):
                 ebay.idle.first(AbilityId.RESEARCH_HISECAUTOTRACKING)
-            elif self.inf_weapons == 3 and await self.can_cast(ebay.first, AbilityId.RESEARCH_NEOSTEELFRAME):
-                ebay.idle.first(AbilityId.RESEARCH_NEOSTEELFRAME)
+            elif self.inf_weapons == 3 and await self.can_cast(ebay.first, AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
+                ebay.idle.first(AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE)
 
     async def build_first_engineering_bay(self):
         if self.main_base():

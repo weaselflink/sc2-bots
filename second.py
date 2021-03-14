@@ -1,4 +1,5 @@
 import random
+from math import floor
 
 from sc2.constants import *
 from sc2.position import Point2
@@ -59,6 +60,7 @@ class SecondBot(SpinBot):
     async def upgrade_infantry(self):
         ebay = self.structures(UnitTypeId.ENGINEERINGBAY)
         factory = self.structures(UnitTypeId.FACTORY)
+        starport = self.structures(UnitTypeId.STARPORT)
         tech_labs = self.structures(UnitTypeId.BARRACKSTECHLAB)
         if tech_labs:
             tech_lab = tech_labs.random
@@ -69,8 +71,10 @@ class SecondBot(SpinBot):
             await self.fulfill_building_need(UnitTypeId.FACTORY, ebay.first)
             if factory:
                 await self.fulfill_building_need(UnitTypeId.ARMORY, ebay.first)
-            if factory:
                 await self.fulfill_building_need(UnitTypeId.STARPORT, ebay.first)
+        if starport and starport.amount < 4:
+            wanted_starports = floor(self.game_minutes / 5)
+            await self.fulfill_building_need(UnitTypeId.STARPORT, ebay.first, wanted_starports)
         if ebay.idle:
             if self.inf_weapons < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)

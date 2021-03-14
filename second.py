@@ -90,7 +90,7 @@ class SecondBot(SpinBot):
                 ebay.idle.first(AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE)
 
     async def build_first_engineering_bay(self):
-        if self.main_base():
+        if self.gas_buildings:
             near = self.main_base().position.towards(self.game_info.map_center, 8)
             await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, near)
 

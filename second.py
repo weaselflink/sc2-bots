@@ -73,20 +73,25 @@ class SecondBot(SpinBot):
         if ebay.idle:
             if self.inf_weapons < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
-            if self.inf_armor < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
+            elif self.inf_armor < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
-            if self.inf_weapons < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
+            elif self.inf_weapons < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
-            if self.inf_armor < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
+            elif self.inf_armor < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
-            if self.inf_weapons < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
+            elif self.inf_weapons < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
-            if self.inf_armor < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
+            elif self.inf_armor < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
+            elif self.inf_weapons == 3 and await self.can_cast(ebay.first, AbilityId.RESEARCH_HISECAUTOTRACKING):
+                ebay.idle.first(AbilityId.RESEARCH_HISECAUTOTRACKING)
+            elif self.inf_weapons == 3 and await self.can_cast(ebay.first, AbilityId.RESEARCH_NEOSTEELFRAME):
+                ebay.idle.first(AbilityId.RESEARCH_NEOSTEELFRAME)
 
     async def build_first_engineering_bay(self):
-        near = self.main_base().position.towards(self.game_info.map_center, 8)
-        await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, near)
+        if self.main_base():
+            near = self.main_base().position.towards(self.game_info.map_center, 8)
+            await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, near)
 
     async def build_expansions(self):
         if self.can_afford(UnitTypeId.COMMANDCENTER) and not self.already_pending(UnitTypeId.COMMANDCENTER):
@@ -106,7 +111,7 @@ class SecondBot(SpinBot):
         return False
 
     async def build_planetary_fortress(self):
-        if self.structures(UnitTypeId.ENGINEERINGBAY):
+        if self.townhalls and self.structures(UnitTypeId.ENGINEERINGBAY):
             if self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS):
                 need_upgrade = self.townhalls(UnitTypeId.COMMANDCENTER).idle
                 if need_upgrade:
@@ -184,6 +189,10 @@ class SecondBot(SpinBot):
             self.inf_weapons = 2
         if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL2:
             self.inf_armor = 2
+        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL3:
+            self.inf_weapons = 3
+        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL3:
+            self.inf_armor = 3
 
     async def on_start(self):
         self.main_target = self.enemy_start_locations[0]

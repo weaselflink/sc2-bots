@@ -15,7 +15,10 @@ class SpinBot(sc2.BotAI):
         return self.structures.closest_distance_to(where) < 0.5
 
     def main_base(self) -> Unit:
-        return self.start_location.closest(self.townhalls)
+        if self.townhalls:
+            return self.start_location.closest(self.townhalls)
+        else:
+            pass
 
     def free_geysers(self, base):
         base_geysers = self.vespene_geyser.closer_than(20, base)

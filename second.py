@@ -9,13 +9,11 @@ from spin_bot import SpinBot
 
 
 class SecondBot(SpinBot):
-    def __init__(self):
-        super().__init__()
-        self.inf_weapons: int = 0
-        self.inf_armor: int = 0
-        self.main_target: Point2 = Point2()
-        self.hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
-        self.units_took_damage: set[int] = set()
+    inf_weapons: int = 0
+    inf_armor: int = 0
+    main_target: Point2 = Point2()
+    hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
+    units_took_damage: set[int] = set()
 
     def has_enemy_within(self, unit: Unit, dist: int):
         for enemy in self.enemy_units.not_structure:

@@ -57,7 +57,7 @@ class SecondBot(SpinBot):
                 return True
         return False
 
-    async def upgrade_infantry(self):
+    async def build_upgrades(self):
         ebay = self.structures(UnitTypeId.ENGINEERINGBAY)
         factory = self.structures(UnitTypeId.FACTORY)
         starport = self.structures(UnitTypeId.STARPORT)
@@ -112,6 +112,18 @@ class SecondBot(SpinBot):
                 need_refinery = self.townhalls.ready.filter(lambda t: self.free_geysers(t).amount > 0)
                 if need_refinery:
                     await self.build(UnitTypeId.REFINERY, self.free_geysers(need_refinery.random).random)
+                    return True
+        return False
+
+    async def build_turrets(self):
+        if self.townhalls.amount < 3:
+            return False
+        if self.can_afford(UnitTypeId.MISSILETURRET):
+            turrets = self.structures(UnitTypeId.MISSILETURRET)
+            if self.townhalls.ready.amount * 2 > turrets.amount:
+                need_turrets = self.townhalls.ready.filter(lambda t: turrets.closer_than(12, t).amount < 2)
+                if need_turrets and not self.already_pending(UnitTypeId.MISSILETURRET):
+                    await self.build(UnitTypeId.MISSILETURRET, need_turrets.random)
                     return True
         return False
 
@@ -239,7 +251,8 @@ class SecondBot(SpinBot):
             await self.build_barracks()
             await self.build_first_engineering_bay()
             await self.build_refineries()
-            await self.upgrade_infantry()
+            await self.build_turrets()
+            await self.build_upgrades()
             await self.build_expansions()
             await self.build_planetary_fortress()
         await self.control_marines()

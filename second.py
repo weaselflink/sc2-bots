@@ -32,12 +32,14 @@ class SecondBot(SpinBot):
 
     async def build_depots(self):
         depot_placement_positions = list([p for p in self.main_base_ramp.corner_depots if not self.has_building(p)])
-        if self.supply_left < 2 and self.can_afford(UnitTypeId.SUPPLYDEPOT) and not self.already_pending(UnitTypeId.SUPPLYDEPOT):
+        if self.supply_left < 2 and self.can_afford(UnitTypeId.SUPPLYDEPOT) and not self.already_pending(
+                UnitTypeId.SUPPLYDEPOT):
             if depot_placement_positions:
                 await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions[0])
                 return True
             else:
-                await self.build(UnitTypeId.SUPPLYDEPOT, self.townhalls.first.position.towards(self.game_info.map_center, 8))
+                await self.build(UnitTypeId.SUPPLYDEPOT,
+                                 self.townhalls.first.position.towards(self.game_info.map_center, 8))
                 return True
         return False
 
@@ -50,7 +52,8 @@ class SecondBot(SpinBot):
             if not racks:
                 await self.build(UnitTypeId.BARRACKS, self.main_base_ramp.barracks_in_middle)
                 return True
-            elif self.units(UnitTypeId.MARINE).amount < 40 and self.minerals > 400 and self.structures(UnitTypeId.ENGINEERINGBAY):
+            elif self.units(UnitTypeId.MARINE).amount < 40 and self.minerals > 400 and self.structures(
+                    UnitTypeId.ENGINEERINGBAY):
                 await self.build(UnitTypeId.BARRACKS, self.structures(UnitTypeId.ENGINEERINGBAY).first)
                 return True
         return False
@@ -74,21 +77,28 @@ class SecondBot(SpinBot):
             wanted_starports = floor(self.game_minutes / 5)
             await self.fulfill_building_need(UnitTypeId.STARPORT, ebay.first, wanted_starports)
         if ebay.idle:
-            if self.inf_weapons < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
+            if self.inf_weapons < 1 and await self.can_cast(ebay.first,
+                                                            AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
-            elif self.inf_armor < 1 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
+            elif self.inf_armor < 1 and await self.can_cast(ebay.first,
+                                                            AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
-            elif self.inf_weapons < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
+            elif self.inf_weapons < 2 and await self.can_cast(ebay.first,
+                                                              AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
-            elif self.inf_armor < 2 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
+            elif self.inf_armor < 2 and await self.can_cast(ebay.first,
+                                                            AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
-            elif self.inf_weapons < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
+            elif self.inf_weapons < 3 and await self.can_cast(ebay.first,
+                                                              AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
-            elif self.inf_armor < 3 and await self.can_cast(ebay.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
+            elif self.inf_armor < 3 and await self.can_cast(ebay.first,
+                                                            AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
                 ebay.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
             elif self.inf_weapons == 3 and await self.can_cast(ebay.first, AbilityId.RESEARCH_HISECAUTOTRACKING):
                 ebay.idle.first(AbilityId.RESEARCH_HISECAUTOTRACKING)
-            elif self.inf_weapons == 3 and await self.can_cast(ebay.first, AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
+            elif self.inf_weapons == 3 and await self.can_cast(ebay.first,
+                                                               AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
                 ebay.idle.first(AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE)
 
     async def build_first_engineering_bay(self):
@@ -139,14 +149,16 @@ class SecondBot(SpinBot):
         marines = self.units(UnitTypeId.MARINE)
         if marines:
             enemy_units = self.enemy_units.visible
-            threats = enemy_units - enemy_units({UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.LARVA})
+            threats = enemy_units - enemy_units({
+                UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.LARVA, UnitTypeId.EGG
+            })
             for t in threats:
                 if self.structures.closest_distance_to(t) < 30:
                     for m in marines:
                         m.attack(threats.closest_to(m))
                     return
 
-            enemies = enemy_units + self.enemy_structures.visible
+            enemies = (enemy_units - enemy_units({UnitTypeId.LARVA, UnitTypeId.EGG})) + self.enemy_structures.visible
             if marines.amount >= 40 and enemies:
                 for m in marines:
                     m.attack(enemies.closest_to(m))
@@ -154,7 +166,8 @@ class SecondBot(SpinBot):
 
             marines_at_enemy_base = marines.closer_than(10, self.main_target)
             if not enemies and marines_at_enemy_base.amount > 20:
-                empty_expansions = list(filter(lambda x: self.townhalls.closest_distance_to(x) > 5, self.expansion_locations_list))
+                empty_expansions = list(
+                    filter(lambda x: self.townhalls.closest_distance_to(x) > 5, self.expansion_locations_list))
                 self.main_target = random.choice(empty_expansions)
 
             if marines.amount >= self.game_minutes * 2.5 or marines.amount >= 40:

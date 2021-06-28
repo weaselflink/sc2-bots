@@ -47,7 +47,7 @@ class SpinBot(SpinBotBase):
         if racks.amount > 2:
             if not self.structures(UnitTypeId.BARRACKSTECHLAB) and not self.already_pending(UnitTypeId.BARRACKSTECHLAB):
                 racks.random(AbilityId.BUILD_TECHLAB)
-        if self.can_build_once(UnitTypeId.BARRACKS) and racks.amount < self.townhalls.amount * 2:
+        if self.can_build_once(UnitTypeId.BARRACKS) and racks.amount < self.townhalls.amount * 2 and racks.amount < 16:
             if not racks:
                 await self.build(UnitTypeId.BARRACKS, self.main_base_ramp.barracks_in_middle)
                 return True
@@ -196,9 +196,15 @@ class SpinBot(SpinBotBase):
                 for v in vikings:
                     v.attack(secondary_targets.closest_to(v))
                 return
+            marines = self.units(UnitTypeId.MARINE)
             for v in vikings:
                 if v.tag in self.units_took_damage:
                     v.move(v.position.towards(self.start_location, 5))
+                elif marines:
+                    target = marines.closest_to(v)
+                    if (target.distance_to(v)) > 3:
+                        v.move(v.position.towards(target, 2))
+
 
     async def control_medivacs(self):
         medivacs = self.units(UnitTypeId.MEDIVAC)
@@ -215,6 +221,11 @@ class SpinBot(SpinBotBase):
                     target = marines.closest_to(m)
                     if (target.distance_to(m)) > 3:
                         m.move(m.position.towards(target, 2))
+            else:
+                for m in medivacs:
+                    if m.tag in self.units_took_damage:
+                        m.move(m.position.towards(self.start_location, 5))
+
 
     async def production(self):
         if self.supply_left > 0:
@@ -262,9 +273,9 @@ class SpinBot(SpinBotBase):
             await self.build_depots()
             await self.distribute_workers()
             await self.build_barracks()
+            await self.build_starports()
             await self.build_first_engineering_bay()
             await self.build_refineries()
-            await self.build_starports()
             await self.build_turrets()
             await self.build_upgrades()
             await self.build_expansions()

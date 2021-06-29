@@ -49,8 +49,8 @@ class SpinBot(SpinBotBase):
         racks = self.structures(UnitTypeId.BARRACKS)
         tech_labs = self.structures(UnitTypeId.BARRACKSTECHLAB)
         reactors = self.structures(UnitTypeId.BARRACKSREACTOR)
-        if racks.amount > 2:
-            racks_with_space = self.barracks_missing_addons()
+        if racks.amount > 1:
+            racks_with_space = await self.barracks_missing_addons()
             if racks_with_space:
                 if not tech_labs:
                     racks_with_space.random(AbilityId.BUILD_TECHLAB)
@@ -60,7 +60,7 @@ class SpinBot(SpinBotBase):
                     racks_with_space.random(AbilityId.BUILD_TECHLAB)
         if self.can_build_once(UnitTypeId.BARRACKS) and racks.amount < self.townhalls.amount * 2 and racks.amount < 16:
             if racks.amount < 1:
-                await self.build_single_barracks(self.main_base_ramp.barracks_in_middle)
+                await self.build_single_barracks(self.main_base_ramp.barracks_in_middle, addon_place=False)
                 return True
             elif racks.amount == 1:
                 near = self.main_base().position.towards(self.game_info.map_center, 8)
@@ -73,22 +73,33 @@ class SpinBot(SpinBotBase):
                 return True
         return False
 
-    def barracks_missing_addons(self) -> Units:
-        return self.structures(UnitTypeId.BARRACKS).filter(
-            lambda r: not r.has_reactor and not r.has_techlab
-        ).filter(
-            lambda r: not self.has_building(r.add_on_position)
+    async def barracks_missing_addons(self) -> Units:
+        return Units(
+            [b for b in self.structures(UnitTypeId.BARRACKS) if await self.room_for_addon(b)],
+            self
         )
+
+    async def room_for_addon(self, unit: Unit) -> bool:
+        return await self.can_place_single(UnitTypeId.SUPPLYDEPOT, unit.position.offset((2.5, -0.5)))
 
     async def build_single_barracks(
             self,
-            near: Union[Unit, Point2]
+            near: Union[Unit, Point2],
+            # TODO does not work with this set to True
+            addon_place: bool = False
     ):
         if isinstance(near, Unit):
             near = near.position
         if isinstance(near, Point2):
             near = near.to2
-        spot = await self.find_placement(UnitTypeId.BARRACKS, near)
+        spot = await self.find_placement(
+            UnitTypeId.BARRACKS,
+            near,
+            max_distance=20,
+            placement_step=2,
+            random_alternative=False,
+            addon_place=addon_place
+        )
         if spot:
             builder = self.select_build_worker(near)
             if builder:

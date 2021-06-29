@@ -4,7 +4,7 @@ from sc2.player import Bot, Computer
 from spin_bot import SpinBot
 
 run_game(
-    maps.get("DiscoBloodbathLE"),
-    [Bot(Race.Terran, SpinBot()), Computer(Race.Protoss, Difficulty.Hard)],
+    maps.get("EphemeronLE"),
+    [Bot(Race.Terran, SpinBot()), Computer(Race.Protoss, Difficulty.Harder)],
     realtime=False
 )

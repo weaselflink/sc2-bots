@@ -14,6 +14,7 @@ class SpinBot(SpinBotBase):
     main_target: Point2 = Point2()
     hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
     units_took_damage: set[int] = set()
+    need_air: bool = False
 
     def has_enemy_within(self, unit: Unit, dist: int):
         for enemy in self.enemy_units.not_structure:
@@ -226,6 +227,14 @@ class SpinBot(SpinBotBase):
                     if m.tag in self.units_took_damage:
                         m.move(m.position.towards(self.start_location, 5))
 
+    def check_for_air(self):
+        flying_threats = self.enemy_units.flying.exclude_type({
+            UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.OBSERVER
+        })
+        ground_threats = self.enemy_units(UnitTypeId.COLOSSUS)
+        if flying_threats or ground_threats:
+            self.need_air = True
+
     async def production(self):
         if self.supply_left > 0:
             idle_ccs = self.townhalls.idle
@@ -237,7 +246,7 @@ class SpinBot(SpinBotBase):
             if idle_starports:
                 if self.units(UnitTypeId.MEDIVAC).amount < marines.amount / 8:
                     idle_starports.random.train(UnitTypeId.MEDIVAC, can_afford_check=True)
-                elif self.units(UnitTypeId.VIKINGFIGHTER).amount < 10:
+                elif self.need_air and self.units(UnitTypeId.VIKINGFIGHTER).amount < 10:
                     idle_starports.random.train(UnitTypeId.VIKINGFIGHTER, can_afford_check=True)
 
             idle_barracks = self.structures(UnitTypeId.BARRACKS).idle
@@ -266,6 +275,8 @@ class SpinBot(SpinBotBase):
 
     async def on_step(self, iteration: int):
         await super().on_step(iteration)
+
+        self.check_for_air()
 
         if self.state.game_loop % 5 == 0:
             await self.update_depots()

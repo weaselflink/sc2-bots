@@ -1,9 +1,11 @@
 import random
 from math import floor
+from typing import Union
 
 from sc2.constants import *
 from sc2.position import Point2
 from sc2.unit import Unit
+from sc2.units import Units
 
 from spin_bot_base import SpinBotBase
 
@@ -45,18 +47,52 @@ class SpinBot(SpinBotBase):
 
     async def build_barracks(self):
         racks = self.structures(UnitTypeId.BARRACKS)
+        tech_labs = self.structures(UnitTypeId.BARRACKSTECHLAB)
+        reactors = self.structures(UnitTypeId.BARRACKSREACTOR)
         if racks.amount > 2:
-            if not self.structures(UnitTypeId.BARRACKSTECHLAB) and not self.already_pending(UnitTypeId.BARRACKSTECHLAB):
-                racks.random(AbilityId.BUILD_TECHLAB)
+            racks_with_space = self.barracks_missing_addons()
+            if racks_with_space:
+                if not tech_labs:
+                    racks_with_space.random(AbilityId.BUILD_TECHLAB)
+                elif reactors.amount * 3 < racks.amount:
+                    racks_with_space.random(AbilityId.BUILD_REACTOR)
+                elif tech_labs.amount * 3 < racks.amount:
+                    racks_with_space.random(AbilityId.BUILD_TECHLAB)
         if self.can_build_once(UnitTypeId.BARRACKS) and racks.amount < self.townhalls.amount * 2 and racks.amount < 16:
-            if not racks:
-                await self.build(UnitTypeId.BARRACKS, self.main_base_ramp.barracks_in_middle)
+            if racks.amount < 1:
+                await self.build_single_barracks(self.main_base_ramp.barracks_in_middle)
                 return True
-            elif self.units(UnitTypeId.MARINE).amount < 40 and self.minerals > 400 and self.structures(
-                    UnitTypeId.ENGINEERINGBAY):
-                await self.build(UnitTypeId.BARRACKS, self.structures(UnitTypeId.ENGINEERINGBAY).first)
+            elif racks.amount == 1:
+                near = self.main_base().position.towards(self.game_info.map_center, 8)
+                await self.build_single_barracks(near)
+                return True
+            elif (self.units(UnitTypeId.MARINE).amount < 40 and
+                  self.minerals > 500 and
+                  self.structures(UnitTypeId.ENGINEERINGBAY)):
+                await self.build_single_barracks(self.structures(UnitTypeId.ENGINEERINGBAY).first)
                 return True
         return False
+
+    def barracks_missing_addons(self) -> Units:
+        return self.structures(UnitTypeId.BARRACKS).filter(
+            lambda r: not r.has_reactor and not r.has_techlab
+        ).filter(
+            lambda r: not self.has_building(r.add_on_position)
+        )
+
+    async def build_single_barracks(
+            self,
+            near: Union[Unit, Point2]
+    ):
+        if isinstance(near, Unit):
+            near = near.position
+        if isinstance(near, Point2):
+            near = near.to2
+        spot = await self.find_placement(UnitTypeId.BARRACKS, near)
+        if spot:
+            builder = self.select_build_worker(near)
+            if builder:
+                self.do(builder.build(UnitTypeId.BARRACKS, spot), subtract_cost=True, ignore_warning=True)
 
     async def build_starports(self):
         ebays = self.structures(UnitTypeId.ENGINEERINGBAY)
@@ -69,10 +105,10 @@ class SpinBot(SpinBotBase):
         ebays = self.structures(UnitTypeId.ENGINEERINGBAY)
         factories = self.structures(UnitTypeId.FACTORY)
         tech_labs = self.structures(UnitTypeId.BARRACKSTECHLAB)
-        if tech_labs:
-            tech_lab = tech_labs.random
-            if await self.can_cast(tech_lab, AbilityId.RESEARCH_COMBATSHIELD):
-                tech_lab(AbilityId.RESEARCH_COMBATSHIELD)
+        if tech_labs.idle:
+            idle_tech_lab = tech_labs.idle.random
+            if await self.can_cast(idle_tech_lab, AbilityId.RESEARCH_COMBATSHIELD):
+                idle_tech_lab(AbilityId.RESEARCH_COMBATSHIELD)
         if ebays:
             await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, ebays.first, 2)
             await self.fulfill_building_need(UnitTypeId.FACTORY, ebays.first)
@@ -103,9 +139,12 @@ class SpinBot(SpinBotBase):
             elif self.inf_weapons == 3 and await self.can_cast(
                     ebays.first, AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
                 ebays.idle.first(AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE)
+            elif self.inf_weapons == 3 and await self.can_cast(
+                    ebays.first, AbilityId.RESEARCH_HISECAUTOTRACKING):
+                ebays.idle.first(AbilityId.RESEARCH_HISECAUTOTRACKING)
 
     async def build_first_engineering_bay(self):
-        if self.townhalls and self.gas_buildings:
+        if self.townhalls and self.gas_buildings and self.structures(UnitTypeId.BARRACKS).amount > 1:
             near = self.main_base().position.towards(self.game_info.map_center, 8)
             await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, near)
 
@@ -118,7 +157,7 @@ class SpinBot(SpinBotBase):
     async def build_refineries(self):
         if self.townhalls.amount < 2:
             return False
-        if self.vespene > 2000:
+        if self.vespene > 1000:
             return False
         if self.can_afford(UnitTypeId.REFINERY):
             if self.townhalls.ready.amount * 2 > self.structures(UnitTypeId.REFINERY).amount:
@@ -140,50 +179,63 @@ class SpinBot(SpinBotBase):
                     return True
         return False
 
-    async def build_planetary_fortress(self):
-        if self.townhalls and self.structures(UnitTypeId.ENGINEERINGBAY):
-            if self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS):
-                need_upgrade = self.townhalls(UnitTypeId.COMMANDCENTER).idle
-                if need_upgrade:
-                    upgrading = need_upgrade.closest_to(self.main_base())
-                    upgrading(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)
-                    return True
+    async def upgrade_ccs(self):
+        if self.need_orbital():
+            upgrading = self.townhalls.first
+            upgrading(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND)
+            return True
+        elif self.need_planetary():
+            upgrading = self.townhalls(UnitTypeId.COMMANDCENTER).idle.closest_to(self.main_base())
+            upgrading(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)
+            return True
         return False
 
-    async def control_marines(self):
-        marines = self.units(UnitTypeId.MARINE)
-        if marines:
+    def need_orbital(self):
+        return (self.townhalls.amount == 1 and
+                self.townhalls.first.type_id == UnitTypeId.COMMANDCENTER and
+                self.structures(UnitTypeId.BARRACKS).amount > 0 and
+                self.can_afford(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND))
+
+    def need_planetary(self):
+        return (self.townhalls.amount > 1 and
+                self.structures(UnitTypeId.ENGINEERINGBAY) and
+                self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS) and
+                self.townhalls(UnitTypeId.COMMANDCENTER).idle)
+
+    async def control_bio(self):
+        troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
+        if troops:
             enemy_units = self.enemy_units.visible
             threats = enemy_units - enemy_units({
                 UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.LARVA, UnitTypeId.EGG
             })
             for t in threats:
                 if self.structures.closest_distance_to(t) < 30:
-                    for m in marines:
+                    for m in troops:
                         m.attack(threats.closest_to(m))
                     return
 
             enemies = (enemy_units - enemy_units({UnitTypeId.LARVA, UnitTypeId.EGG})) + self.enemy_structures.visible
-            if marines.amount >= 40 and enemies:
-                for m in marines:
+            if troops.amount >= 40 and enemies:
+                for m in troops:
                     m.attack(enemies.closest_to(m))
                     return
 
-            marines_at_enemy_base = marines.closer_than(10, self.main_target)
+            marines_at_enemy_base = troops.closer_than(10, self.main_target)
             if not enemies and marines_at_enemy_base.amount > 20:
                 empty_expansions = list(
                     filter(lambda x: self.townhalls.closest_distance_to(x) > 5, self.expansion_locations_list)
                 )
                 self.main_target = random.choice(empty_expansions)
 
-            if marines.amount >= self.game_minutes * 2.5 or marines.amount >= 40:
-                for m in marines:
+            if troops.amount >= self.game_minutes * 2.5 or troops.amount >= 40:
+                for m in troops:
                     if m.distance_to(self.main_target) > 5:
                         m.attack(self.main_target)
                 return
 
-            rally_point = self.center(marines).position
-            for m in marines:
+            rally_point = self.center(troops).position
+            for m in troops:
                 if m.distance_to(rally_point) > 5:
                     m.move(rally_point)
 
@@ -200,28 +252,28 @@ class SpinBot(SpinBotBase):
                 for v in vikings:
                     v.attack(secondary_targets.closest_to(v))
                 return
-            marines = self.units(UnitTypeId.MARINE)
+            troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
             for v in vikings:
                 if v.tag in self.units_took_damage:
                     v.move(v.position.towards(self.start_location, 5))
-                elif marines:
-                    target = marines.closest_to(v)
+                elif troops:
+                    target = troops.closest_to(v)
                     if (target.distance_to(v)) > 3:
                         v.move(v.position.towards(target, 2))
 
     async def control_medivacs(self):
         medivacs = self.units(UnitTypeId.MEDIVAC)
         if medivacs:
-            marines = self.units(UnitTypeId.MARINE)
-            injured_marines = marines.filter(lambda i: i.health < i.health_max)
+            troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
+            injured_marines = troops.filter(lambda i: i.health < i.health_max)
             if injured_marines:
                 for m in medivacs:
                     target = injured_marines.closest_to(m)
                     if (target.distance_to(m)) > 3:
                         m.move(m.position.towards(target, 2))
-            elif marines:
+            elif troops:
                 for m in medivacs:
-                    target = marines.closest_to(m)
+                    target = troops.closest_to(m)
                     if (target.distance_to(m)) > 3:
                         m.move(m.position.towards(target, 2))
             else:
@@ -244,16 +296,16 @@ class SpinBot(SpinBotBase):
                 idle_ccs.random.train(UnitTypeId.SCV, can_afford_check=True)
 
             marines = self.units(UnitTypeId.MARINE)
-            idle_starports = self.structures(UnitTypeId.STARPORT).idle
-            if idle_starports:
-                if self.units(UnitTypeId.MEDIVAC).amount < marines.amount / 8:
-                    idle_starports.random.train(UnitTypeId.MEDIVAC, can_afford_check=True)
-                elif self.need_air and self.units(UnitTypeId.VIKINGFIGHTER).amount < 10:
-                    idle_starports.random.train(UnitTypeId.VIKINGFIGHTER, can_afford_check=True)
+            if self.units(UnitTypeId.MEDIVAC).amount < marines.amount / 8:
+                self.train(UnitTypeId.MEDIVAC)
+            elif self.need_air and self.units(UnitTypeId.VIKINGFIGHTER).amount < 10:
+                self.train(UnitTypeId.VIKINGFIGHTER)
 
-            idle_barracks = self.structures(UnitTypeId.BARRACKS).idle
-            if idle_barracks and self.units(UnitTypeId.MARINE).amount < 90:
-                idle_barracks.random.train(UnitTypeId.MARINE, can_afford_check=True)
+            marauders = self.units(UnitTypeId.MARAUDER)
+            if marines.amount > 10 and marines.amount > marauders.amount * 3:
+                self.train(UnitTypeId.MARAUDER)
+            if marines.amount < 90:
+                self.train(UnitTypeId.MARINE)
 
     async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float):
         self.units_took_damage.add(unit.tag)
@@ -280,19 +332,19 @@ class SpinBot(SpinBotBase):
 
         self.check_for_air()
 
+        await self.build_barracks()
         if self.state.game_loop % 5 == 0:
             await self.update_depots()
             await self.build_depots()
             await self.distribute_workers()
-            await self.build_barracks()
             await self.build_starports()
             await self.build_first_engineering_bay()
             await self.build_refineries()
             await self.build_turrets()
             await self.build_upgrades()
             await self.build_expansions()
-            await self.build_planetary_fortress()
-        await self.control_marines()
+            await self.upgrade_ccs()
+        await self.control_bio()
         await self.control_vikings()
         await self.control_medivacs()
 

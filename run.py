@@ -5,6 +5,6 @@ from spin_bot import SpinBot
 
 run_game(
     maps.get("EphemeronLE"),
-    [Bot(Race.Terran, SpinBot()), Computer(Race.Protoss, Difficulty.Harder)],
+    [Bot(Race.Terran, SpinBot()), Computer(Race.Protoss, Difficulty.Hard)],
     realtime=False
 )

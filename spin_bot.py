@@ -34,7 +34,7 @@ class SpinBot(SpinBotBase):
         depot_placement_positions = list([p for p in self.main_base_ramp.corner_depots if not self.has_building(p)])
         if self.supply_left < 2 and self.can_build_once(UnitTypeId.SUPPLYDEPOT):
             if depot_placement_positions:
-                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions[0])
+                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions)
                 return True
             else:
                 await self.build(UnitTypeId.SUPPLYDEPOT,
@@ -79,28 +79,28 @@ class SpinBot(SpinBotBase):
                 await self.fulfill_building_need(UnitTypeId.ARMORY, ebays.first)
                 await self.fulfill_building_need(UnitTypeId.STARPORT, ebays.first)
         if ebays.idle:
-            if self.inf_weapons < 1 and await self.can_cast(ebays.first,
-                                                            AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
+            if self.inf_weapons < 1 and await self.can_cast(
+                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
-            elif self.inf_armor < 1 and await self.can_cast(ebays.first,
-                                                            AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
+            elif self.inf_armor < 1 and await self.can_cast(
+                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
                 ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
-            elif self.inf_weapons < 2 and await self.can_cast(ebays.first,
-                                                              AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
+            elif self.inf_weapons < 2 and await self.can_cast(
+                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
                 ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
-            elif self.inf_armor < 2 and await self.can_cast(ebays.first,
-                                                            AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
+            elif self.inf_armor < 2 and await self.can_cast(
+                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
                 ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
-            elif self.inf_weapons < 3 and await self.can_cast(ebays.first,
-                                                              AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
+            elif self.inf_weapons < 3 and await self.can_cast(
+                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
                 ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
-            elif self.inf_armor < 3 and await self.can_cast(ebays.first,
-                                                            AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
+            elif self.inf_armor < 3 and await self.can_cast(
+                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
                 ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
             elif self.inf_weapons == 3 and await self.can_cast(ebays.first, AbilityId.RESEARCH_HISECAUTOTRACKING):
                 ebays.idle.first(AbilityId.RESEARCH_HISECAUTOTRACKING)
-            elif self.inf_weapons == 3 and await self.can_cast(ebays.first,
-                                                               AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
+            elif self.inf_weapons == 3 and await self.can_cast(
+                    ebays.first, AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
                 ebays.idle.first(AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE)
 
     async def build_first_engineering_bay(self):
@@ -169,7 +169,8 @@ class SpinBot(SpinBotBase):
             marines_at_enemy_base = marines.closer_than(10, self.main_target)
             if not enemies and marines_at_enemy_base.amount > 20:
                 empty_expansions = list(
-                    filter(lambda x: self.townhalls.closest_distance_to(x) > 5, self.expansion_locations_list))
+                    filter(lambda x: self.townhalls.closest_distance_to(x) > 5, self.expansion_locations_list)
+                )
                 self.main_target = random.choice(empty_expansions)
 
             if marines.amount >= self.game_minutes * 2.5 or marines.amount >= 40:
@@ -205,7 +206,6 @@ class SpinBot(SpinBotBase):
                     if (target.distance_to(v)) > 3:
                         v.move(v.position.towards(target, 2))
 
-
     async def control_medivacs(self):
         medivacs = self.units(UnitTypeId.MEDIVAC)
         if medivacs:
@@ -225,7 +225,6 @@ class SpinBot(SpinBotBase):
                 for m in medivacs:
                     if m.tag in self.units_took_damage:
                         m.move(m.position.towards(self.start_location, 5))
-
 
     async def production(self):
         if self.supply_left > 0:

@@ -34,7 +34,7 @@ class SpinBot(SpinBotBase):
         depot_placement_positions = list([p for p in self.main_base_ramp.corner_depots if not self.has_building(p)])
         if self.supply_left < 2 and self.can_build_once(UnitTypeId.SUPPLYDEPOT):
             if depot_placement_positions:
-                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions)
+                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions[0])
                 return True
             else:
                 await self.build(UnitTypeId.SUPPLYDEPOT,

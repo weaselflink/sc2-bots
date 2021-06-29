@@ -201,13 +201,17 @@ class SpinBot(SpinBotBase):
             return True
         return False
 
-    def need_orbital(self):
-        return (self.townhalls.amount == 1 and
-                self.townhalls.first.type_id == UnitTypeId.COMMANDCENTER and
-                self.structures(UnitTypeId.BARRACKS).amount > 0 and
-                self.can_afford(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND))
+    def need_orbital(self) -> bool:
+        if self.townhalls:
+            initial_cc = self.townhalls.closest_to(self.start_location)
+            return (initial_cc and
+                    initial_cc.type_id == UnitTypeId.COMMANDCENTER and
+                    self.structures(UnitTypeId.BARRACKS).amount > 0 and
+                    self.can_afford(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND))
+        else:
+            return False
 
-    def need_planetary(self):
+    def need_planetary(self) -> bool:
         return (self.townhalls.amount > 1 and
                 self.structures(UnitTypeId.ENGINEERINGBAY) and
                 self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS) and
@@ -234,9 +238,9 @@ class SpinBot(SpinBotBase):
 
             marines_at_enemy_base = troops.closer_than(10, self.main_target)
             if not enemies and marines_at_enemy_base.amount > 20:
-                empty_expansions = list(
-                    filter(lambda x: self.townhalls.closest_distance_to(x) > 5, self.expansion_locations_list)
-                )
+                empty_expansions = [
+                    x for x in self.expansion_locations_list if self.townhalls.closest_distance_to(x) > 5
+                ]
                 self.main_target = random.choice(empty_expansions)
 
             if troops.amount >= self.game_minutes * 2.5 or troops.amount >= 40:

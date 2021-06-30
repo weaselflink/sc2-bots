@@ -232,8 +232,7 @@ class SpinBot(SpinBotBase):
         if (self.townhalls.amount > 1 and
                 self.townhalls(UnitTypeId.COMMANDCENTER).idle and
                 self.structures(UnitTypeId.ENGINEERINGBAY) and
-                self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS) and
-                self.townhalls(UnitTypeId.COMMANDCENTER).idle):
+                self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)):
             return self.townhalls(UnitTypeId.COMMANDCENTER).idle.closest_to(self.main_base())
         return None
 

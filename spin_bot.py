@@ -219,7 +219,7 @@ class SpinBot(SpinBotBase):
 
     def need_planetary(self) -> Union[Unit, None]:
         if (self.townhalls.amount > 1 and
-            self.townhalls(UnitTypeId.COMMANDCENTER).idle and
+                self.townhalls(UnitTypeId.COMMANDCENTER).idle and
                 self.structures(UnitTypeId.ENGINEERINGBAY) and
                 self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS) and
                 self.townhalls(UnitTypeId.COMMANDCENTER).idle):
@@ -331,6 +331,34 @@ class SpinBot(SpinBotBase):
             if marines.amount < 90:
                 self.train(UnitTypeId.MARINE)
 
+    async def repair_ccs(self):
+        for cc in self.townhalls:
+            if cc.health < cc.health_max:
+                health_ratio = cc.health / cc.health_max
+                if health_ratio > 0.8:
+                    wanted = 4
+                elif health_ratio > 0.5:
+                    wanted = 8
+                else:
+                    wanted = 16
+                repairing_workers = await self.scvs_repairing(cc)
+                wanted = wanted - repairing_workers.amount
+                if wanted > 0:
+                    avail_workers = self.workers.filter(lambda w: not w.is_repairing)
+                    near_workers = avail_workers.closest_n_units(cc, wanted)
+                    for nw in near_workers:
+                        nw.repair(cc)
+                break
+
+    async def scvs_repairing(self, target: Unit) -> Units:
+        return Units(
+            [w for w in self.workers if (
+                    w.is_repairing and
+                    w.orders and
+                    w.orders[0].target == target)],
+            self
+        )
+
     async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float):
         self.units_took_damage.add(unit.tag)
 
@@ -371,23 +399,8 @@ class SpinBot(SpinBotBase):
         await self.control_bio()
         await self.control_vikings()
         await self.control_medivacs()
-
-        for cc in self.townhalls:
-            if cc.health < cc.health_max:
-                repairing_workers = self.workers.filter(lambda w: w.is_repairing).closer_than(10, cc)
-                if repairing_workers.amount < 4:
-                    avail_workers = self.workers.filter(lambda w: not w.is_repairing)
-                    near_workers = avail_workers.closer_than(10, cc)
-                    if near_workers.amount > 3:
-                        for nw in near_workers:
-                            nw.repair(cc)
-                    else:
-                        for aw in avail_workers.closest_n_units(cc, 10):
-                            aw.repair(cc)
-                break
-
+        await self.repair_ccs()
         await self.production()
-
         await self.orbital_commander.command()
 
         self.units_took_damage.clear()

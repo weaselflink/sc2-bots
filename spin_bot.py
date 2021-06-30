@@ -7,7 +7,7 @@ from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
 
-from spin_bot_base import SpinBotBase
+from spin_bot_base import SpinBotBase, OrbitalCommander
 
 
 class SpinBot(SpinBotBase):
@@ -17,6 +17,11 @@ class SpinBot(SpinBotBase):
     hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
     units_took_damage: set[int] = set()
     need_air: bool = False
+    orbital_commander: OrbitalCommander
+
+    def __init__(self):
+        super().__init__()
+        self.orbital_commander = OrbitalCommander(self)
 
     def has_enemy_within(self, unit: Unit, dist: int):
         for enemy in self.enemy_units.not_structure:
@@ -191,32 +196,35 @@ class SpinBot(SpinBotBase):
         return False
 
     async def upgrade_ccs(self):
-        if self.need_orbital():
-            upgrading = self.townhalls.first
-            upgrading(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND)
+        need_orbital = self.need_orbital()
+        if need_orbital:
+            need_orbital(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND)
             return True
-        elif self.need_planetary():
-            upgrading = self.townhalls(UnitTypeId.COMMANDCENTER).idle.closest_to(self.main_base())
-            upgrading(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)
+        need_planetary = self.need_planetary()
+        if need_planetary:
+            need_planetary(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)
             return True
         return False
 
-    def need_orbital(self) -> bool:
+    def need_orbital(self) -> Union[Unit, None]:
         in_progress = self.already_pending(UnitTypeId.ORBITALCOMMAND)
         if self.townhalls and not in_progress:
             initial_cc = self.townhalls.closest_to(self.start_location)
-            return (initial_cc and
+            if (initial_cc and
                     initial_cc.type_id == UnitTypeId.COMMANDCENTER and
                     self.structures(UnitTypeId.BARRACKS).amount > 0 and
-                    self.can_afford(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND))
-        else:
-            return False
+                    self.can_afford(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND)):
+                return initial_cc
+        return None
 
-    def need_planetary(self) -> bool:
-        return (self.townhalls.amount > 1 and
+    def need_planetary(self) -> Union[Unit, None]:
+        if (self.townhalls.amount > 1 and
+            self.townhalls(UnitTypeId.COMMANDCENTER).idle and
                 self.structures(UnitTypeId.ENGINEERINGBAY) and
                 self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS) and
-                self.townhalls(UnitTypeId.COMMANDCENTER).idle)
+                self.townhalls(UnitTypeId.COMMANDCENTER).idle):
+            return self.townhalls(UnitTypeId.COMMANDCENTER).idle.closest_to(self.main_base())
+        return None
 
     async def control_bio(self):
         troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
@@ -379,5 +387,7 @@ class SpinBot(SpinBotBase):
                 break
 
         await self.production()
+
+        await self.orbital_commander.command()
 
         self.units_took_damage.clear()

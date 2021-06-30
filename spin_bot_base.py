@@ -11,8 +11,8 @@ class SpinBotBase(sc2.BotAI):
 
     inf_weapons: int = 0
     inf_armor: int = 0
-    ship_weapons: int = 0
-    ship_armor: int = 0
+    vehicle_weapons: int = 0
+    vehicle_armor: int = 0
 
     def __init__(self):
         super().__init__()
@@ -31,18 +31,18 @@ class SpinBotBase(sc2.BotAI):
             self.inf_armor = 2
         elif upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL3:
             self.inf_armor = 3
-        elif upgrade == UpgradeId.TERRANSHIPWEAPONSLEVEL1:
-            self.ship_weapons = 1
-        elif upgrade == UpgradeId.TERRANSHIPWEAPONSLEVEL2:
-            self.ship_weapons = 2
-        elif upgrade == UpgradeId.TERRANSHIPWEAPONSLEVEL3:
-            self.ship_weapons = 3
-        elif upgrade == UpgradeId.TERRANSHIPARMORSLEVEL1:
-            self.ship_armor = 1
-        elif upgrade == UpgradeId.TERRANSHIPARMORSLEVEL2:
-            self.ship_armor = 2
-        elif upgrade == UpgradeId.TERRANSHIPARMORSLEVEL3:
-            self.ship_armor = 3
+        elif upgrade == UpgradeId.TERRANVEHICLEANDSHIPWEAPONSLEVEL1:
+            self.vehicle_weapons = 1
+        elif upgrade == UpgradeId.TERRANVEHICLEANDSHIPWEAPONSLEVEL2:
+            self.vehicle_weapons = 2
+        elif upgrade == UpgradeId.TERRANVEHICLEANDSHIPWEAPONSLEVEL3:
+            self.vehicle_weapons = 3
+        elif upgrade == UpgradeId.TERRANVEHICLEANDSHIPARMORSLEVEL1:
+            self.vehicle_armor = 1
+        elif upgrade == UpgradeId.TERRANVEHICLEANDSHIPARMORSLEVEL2:
+            self.vehicle_armor = 2
+        elif upgrade == UpgradeId.TERRANVEHICLEANDSHIPARMORSLEVEL3:
+            self.vehicle_armor = 3
 
     def has_building(self, where: sc2.Union[Unit, Point2]) -> bool:
         return self.structures.closest_distance_to(where) < 0.5

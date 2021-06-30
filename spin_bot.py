@@ -119,6 +119,7 @@ class SpinBot(SpinBotBase):
 
     async def build_upgrades(self):
         ebays = self.structures(UnitTypeId.ENGINEERINGBAY)
+        armories = self.structures(UnitTypeId.ARMORY)
         factories = self.structures(UnitTypeId.FACTORY)
         tech_labs = self.structures(UnitTypeId.BARRACKSTECHLAB)
         if tech_labs.idle:
@@ -132,32 +133,42 @@ class SpinBot(SpinBotBase):
                 await self.fulfill_building_need(UnitTypeId.ARMORY, ebays.first)
                 await self.fulfill_building_need(UnitTypeId.STARPORT, ebays.first)
         if ebays.idle:
+            an_ebay = ebays.idle.first
             if self.inf_weapons < 1 and await self.can_cast(
-                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
-                ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
+                    an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
+                an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
             elif self.inf_armor < 1 and await self.can_cast(
-                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
-                ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
+                    an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
+                an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
             elif self.inf_weapons < 2 and await self.can_cast(
-                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
-                ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
+                    an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
+                an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
             elif self.inf_armor < 2 and await self.can_cast(
-                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
-                ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
+                    an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
+                an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
             elif self.inf_weapons < 3 and await self.can_cast(
-                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
-                ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
+                    an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
+                an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
             elif self.inf_armor < 3 and await self.can_cast(
-                    ebays.first, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
-                ebays.idle.first(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
-            elif self.inf_weapons == 3 and await self.can_cast(ebays.first, AbilityId.RESEARCH_HISECAUTOTRACKING):
-                ebays.idle.first(AbilityId.RESEARCH_HISECAUTOTRACKING)
+                    an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
+                an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
             elif self.inf_weapons == 3 and await self.can_cast(
-                    ebays.first, AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
-                ebays.idle.first(AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE)
+                    an_ebay, AbilityId.RESEARCH_HISECAUTOTRACKING):
+                an_ebay(AbilityId.RESEARCH_HISECAUTOTRACKING)
             elif self.inf_weapons == 3 and await self.can_cast(
-                    ebays.first, AbilityId.RESEARCH_HISECAUTOTRACKING):
-                ebays.idle.first(AbilityId.RESEARCH_HISECAUTOTRACKING)
+                    an_ebay, AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
+                an_ebay(AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE)
+        if armories.idle and self.inf_weapons == 2 and self.inf_armor == 2:
+            an_armory = armories.idle.first
+            if self.vehicle_armor < 1 and await self.can_cast(
+                    an_armory, AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1):
+                an_armory(AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1)
+            elif self.vehicle_armor < 2 and await self.can_cast(
+                    an_armory, AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1):
+                an_armory(AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1)
+            elif self.vehicle_armor < 3 and await self.can_cast(
+                    an_armory, AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1):
+                an_armory(AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1)
 
     async def build_first_engineering_bay(self):
         if self.townhalls and self.gas_buildings and self.structures(UnitTypeId.BARRACKS).amount > 1:

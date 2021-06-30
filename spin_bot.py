@@ -387,6 +387,7 @@ class SpinBot(SpinBotBase):
     async def on_step(self, iteration: int):
         await super().on_step(iteration)
 
+        # self.client.debug_sphere_out(self.townhalls.first, 9)
         self.check_for_air()
 
         await self.build_barracks()

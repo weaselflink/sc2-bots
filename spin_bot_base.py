@@ -84,4 +84,4 @@ class OrbitalCommander:
         if not ready_bases:
             return Units([], self.bot)
         else:
-            return self.bot.mineral_field.in_distance_of_group(ready_bases, 7)
+            return self.bot.mineral_field.in_distance_of_group(ready_bases, 9)

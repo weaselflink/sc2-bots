@@ -60,7 +60,7 @@ class SpinBot(SpinBotBase):
                     racks_with_space.random(AbilityId.BUILD_TECHLAB)
         if self.can_build_once(UnitTypeId.BARRACKS) and racks.amount < self.townhalls.amount * 2 and racks.amount < 16:
             if racks.amount < 1:
-                await self.build_single_barracks(self.main_base_ramp.barracks_in_middle, addon_place=False)
+                await self.build_single_barracks(self.main_base_ramp.barracks_correct_placement, addon_place=False)
                 return True
             elif racks.amount == 1:
                 near = self.main_base().position.towards(self.game_info.map_center, 8)
@@ -202,7 +202,8 @@ class SpinBot(SpinBotBase):
         return False
 
     def need_orbital(self) -> bool:
-        if self.townhalls:
+        in_progress = self.already_pending(UnitTypeId.ORBITALCOMMAND)
+        if self.townhalls and not in_progress:
             initial_cc = self.townhalls.closest_to(self.start_location)
             return (initial_cc and
                     initial_cc.type_id == UnitTypeId.COMMANDCENTER and

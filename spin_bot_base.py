@@ -1,15 +1,48 @@
 
 import sc2
 from sc2 import UnitTypeId, Union, AbilityId
+from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
 
 
 class SpinBotBase(sc2.BotAI):
+
+    inf_weapons: int = 0
+    inf_armor: int = 0
+    ship_weapons: int = 0
+    ship_armor: int = 0
+
     def __init__(self):
         super().__init__()
         self.game_minutes: float = 0
+
+    async def on_upgrade_complete(self, upgrade: UpgradeId):
+        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:
+            self.inf_weapons = 1
+        elif upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL2:
+            self.inf_weapons = 2
+        elif upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL3:
+            self.inf_weapons = 3
+        elif upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL1:
+            self.inf_armor = 1
+        elif upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL2:
+            self.inf_armor = 2
+        elif upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL3:
+            self.inf_armor = 3
+        elif upgrade == UpgradeId.TERRANSHIPWEAPONSLEVEL1:
+            self.ship_weapons = 1
+        elif upgrade == UpgradeId.TERRANSHIPWEAPONSLEVEL2:
+            self.ship_weapons = 2
+        elif upgrade == UpgradeId.TERRANSHIPWEAPONSLEVEL3:
+            self.ship_weapons = 3
+        elif upgrade == UpgradeId.TERRANSHIPARMORSLEVEL1:
+            self.ship_armor = 1
+        elif upgrade == UpgradeId.TERRANSHIPARMORSLEVEL2:
+            self.ship_armor = 2
+        elif upgrade == UpgradeId.TERRANSHIPARMORSLEVEL3:
+            self.ship_armor = 3
 
     def has_building(self, where: sc2.Union[Unit, Point2]) -> bool:
         return self.structures.closest_distance_to(where) < 0.5

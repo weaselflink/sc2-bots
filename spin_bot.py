@@ -11,9 +11,8 @@ from spin_bot_base import SpinBotBase, OrbitalCommander
 
 
 class SpinBot(SpinBotBase):
+
     build_units: bool = True
-    inf_weapons: int = 0
-    inf_armor: int = 0
     main_target: Point2 = Point2()
     hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
     units_took_damage: set[int] = set()
@@ -366,20 +365,11 @@ class SpinBot(SpinBotBase):
         self.units_took_damage.add(unit.tag)
 
     async def on_upgrade_complete(self, upgrade: UpgradeId):
-        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:
-            self.inf_weapons = 1
-        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL1:
-            self.inf_armor = 1
-        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL2:
-            self.inf_weapons = 2
-        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL2:
-            self.inf_armor = 2
-        if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL3:
-            self.inf_weapons = 3
-        if upgrade == UpgradeId.TERRANINFANTRYARMORSLEVEL3:
-            self.inf_armor = 3
+        await super().on_upgrade_complete(upgrade)
 
     async def on_start(self):
+        await super().on_start()
+
         self.main_target = self.enemy_start_locations[0]
         if not self.build_units:
             await self.chat_send("DEBUG MODE: not building units")

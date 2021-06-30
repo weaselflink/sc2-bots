@@ -11,6 +11,7 @@ from spin_bot_base import SpinBotBase, OrbitalCommander
 
 
 class SpinBot(SpinBotBase):
+    build_units: bool = True
     inf_weapons: int = 0
     inf_armor: int = 0
     main_target: Point2 = Point2()
@@ -319,6 +320,8 @@ class SpinBot(SpinBotBase):
             if idle_ccs and self.workers.amount < 90:
                 idle_ccs.random.train(UnitTypeId.SCV, can_afford_check=True)
 
+            if not self.build_units:
+                return
             marines = self.units(UnitTypeId.MARINE)
             if self.units(UnitTypeId.MEDIVAC).amount < marines.amount / 8:
                 self.train(UnitTypeId.MEDIVAC)
@@ -355,7 +358,7 @@ class SpinBot(SpinBotBase):
             [w for w in self.workers if (
                     w.is_repairing and
                     w.orders and
-                    w.orders[0].target == target)],
+                    w.orders[0].target == target.tag)],
             self
         )
 
@@ -378,6 +381,8 @@ class SpinBot(SpinBotBase):
 
     async def on_start(self):
         self.main_target = self.enemy_start_locations[0]
+        if not self.build_units:
+            await self.chat_send("DEBUG MODE: not building units")
 
     async def on_step(self, iteration: int):
         await super().on_step(iteration)

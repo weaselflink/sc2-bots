@@ -248,6 +248,7 @@ class SpinBot(SpinBotBase):
     async def control_bio(self):
         troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
         if troops:
+            rally_point = self.center(troops).position
             enemy_units = self.enemy_units.visible
             threats = enemy_units - enemy_units({
                 UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.LARVA, UnitTypeId.EGG
@@ -261,7 +262,13 @@ class SpinBot(SpinBotBase):
             enemies = (enemy_units - enemy_units({UnitTypeId.LARVA, UnitTypeId.EGG})) + self.enemy_structures.visible
             if troops.amount >= 40 and enemies:
                 for m in troops:
-                    m.attack(enemies.closest_to(m))
+                    attackable_enemies = Units([
+                        e for e in enemies if m.can_attack_air or not e.is_flying
+                    ], self)
+                    if attackable_enemies:
+                        m.attack(attackable_enemies.closest_to(m))
+                    elif m.distance_to(rally_point) > 5:
+                        m.move(rally_point)
                 return
 
             marines_at_enemy_base = troops.closer_than(10, self.main_target)
@@ -274,7 +281,6 @@ class SpinBot(SpinBotBase):
                         m.attack(self.main_target)
                 return
 
-            rally_point = self.center(troops).position
             for m in troops:
                 if m.distance_to(rally_point) > 5:
                     m.move(rally_point)
@@ -413,11 +419,11 @@ class SpinBot(SpinBotBase):
             await self.build_turrets()
             await self.build_upgrades()
             await self.build_expansions()
-            await self.upgrade_ccs()
         await self.control_bio()
         await self.control_vikings()
         await self.control_medivacs()
         await self.repair_ccs()
+        await self.upgrade_ccs()
         await self.production()
         await self.orbital_commander.command()
 

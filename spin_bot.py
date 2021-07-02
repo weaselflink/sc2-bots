@@ -1,6 +1,6 @@
 import random
 from math import floor
-from typing import Union
+from typing import Union, Optional, List
 
 from sc2.constants import *
 from sc2.position import Point2
@@ -39,16 +39,24 @@ class SpinBot(SpinBotBase):
                 depot(AbilityId.MORPH_SUPPLYDEPOT_RAISE)
 
     async def build_depots(self):
-        depot_placement_positions = list([p for p in self.main_base_ramp.corner_depots if not self.has_building(p)])
+        depot_placement_positions = self.empty_ramp_corners()
         if self.supply_left < 2 and self.can_build_once(UnitTypeId.SUPPLYDEPOT):
             if depot_placement_positions:
                 await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions[0])
                 return True
             else:
-                await self.build(UnitTypeId.SUPPLYDEPOT,
-                                 self.townhalls.first.position.towards(self.game_info.map_center, 8))
+                await self.build(
+                    UnitTypeId.SUPPLYDEPOT,
+                    self.townhalls.first.position.towards(self.game_info.map_center, 8)
+                )
                 return True
         return False
+
+    def empty_ramp_corners(self) -> List[Point2]:
+        corners: Set[Point2] = self.main_base_ramp.corner_depots  # type: ignore
+        return [
+            p for p in corners if not self.has_building(p)
+        ]
 
     async def build_barracks(self):
         racks = self.structures(UnitTypeId.BARRACKS)
@@ -65,7 +73,8 @@ class SpinBot(SpinBotBase):
                     racks_with_space.random(AbilityId.BUILD_TECHLAB)
         if self.can_build_once(UnitTypeId.BARRACKS) and racks.amount < self.townhalls.amount * 2 and racks.amount < 16:
             if racks.amount < 1:
-                await self.build_single_barracks(self.main_base_ramp.barracks_correct_placement, addon_place=False)
+                placement: Optional[Point2] = self.main_base_ramp.barracks_correct_placement  # type: ignore
+                await self.build_single_barracks(placement, addon_place=False)
                 return True
             elif racks.amount == 1:
                 near = self.main_base.position.towards(self.game_info.map_center, 8)
@@ -257,10 +266,7 @@ class SpinBot(SpinBotBase):
 
             marines_at_enemy_base = troops.closer_than(10, self.main_target)
             if not enemies and marines_at_enemy_base.amount > 20:
-                empty_expansions = [
-                    x for x in self.expansion_locations_list if self.townhalls.closest_distance_to(x) > 5
-                ]
-                self.main_target = random.choice(empty_expansions)
+                self.main_target = random.choice(self.empty_expansions())
 
             if troops.amount >= self.game_minutes * 2.5 or troops.amount >= 40:
                 for m in troops:
@@ -272,6 +278,12 @@ class SpinBot(SpinBotBase):
             for m in troops:
                 if m.distance_to(rally_point) > 5:
                     m.move(rally_point)
+
+    def empty_expansions(self) -> List[Point2]:
+        expansions: List[Point2] = self.expansion_locations_list  # type: ignore
+        return [
+            x for x in expansions if self.townhalls.closest_distance_to(x) > 5
+        ]
 
     async def control_vikings(self):
         vikings = self.units(UnitTypeId.VIKINGFIGHTER)

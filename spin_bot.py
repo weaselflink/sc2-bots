@@ -248,7 +248,7 @@ class SpinBot(SpinBotBase):
     async def control_bio(self):
         troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
         if troops:
-            rally_point = self.center(troops).position
+            rally_point: Point2 = self.center(troops).position  # type: ignore
             enemy_units = self.enemy_units.visible
             threats = enemy_units - enemy_units({
                 UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.LARVA, UnitTypeId.EGG
@@ -256,19 +256,13 @@ class SpinBot(SpinBotBase):
             for t in threats:
                 if self.structures.closest_distance_to(t) < 15:
                     for m in troops:
-                        m.attack(threats.closest_to(m))
+                        self.attack_or_rally(m, threats, rally_point)
                     return
 
             enemies = (enemy_units - enemy_units({UnitTypeId.LARVA, UnitTypeId.EGG})) + self.enemy_structures.visible
             if troops.amount >= 40 and enemies:
                 for m in troops:
-                    attackable_enemies = Units([
-                        e for e in enemies if m.can_attack_air or not e.is_flying
-                    ], self)
-                    if attackable_enemies:
-                        m.attack(attackable_enemies.closest_to(m))
-                    elif m.distance_to(rally_point) > 5:
-                        m.move(rally_point)
+                    self.attack_or_rally(m, enemies, rally_point)
                 return
 
             marines_at_enemy_base = troops.closer_than(10, self.main_target)
@@ -284,6 +278,22 @@ class SpinBot(SpinBotBase):
             for m in troops:
                 if m.distance_to(rally_point) > 5:
                     m.move(rally_point)
+
+    def attack_or_rally(self, unit: Unit, targets: Units, rally: Point2):
+        attackable_enemies = Units([
+            t for t in targets if unit.can_attack_both or
+                                  (not t.is_flying and unit.can_attack_ground) or
+                                  (t.is_flying and unit.can_attack_air)
+        ], self)
+        if attackable_enemies:
+            closest = attackable_enemies.closest_to(unit)
+            closest_distance = closest.distance_to(unit) - (unit.radius + closest.radius)
+            if not unit.weapon_ready and closest_distance > 0.1:
+                unit.move(closest)
+            else:
+                unit.attack(closest)
+        elif unit.distance_to(rally) > 5:
+            unit.move(rally)
 
     def empty_expansions(self) -> List[Point2]:
         expansions: List[Point2] = self.expansion_locations_list  # type: ignore

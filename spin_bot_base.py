@@ -1,6 +1,7 @@
+from typing import Set
 
 import sc2
-from sc2 import UnitTypeId, Union, AbilityId
+from sc2 import UnitTypeId, Union
 from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
 from sc2.unit import Unit
@@ -13,10 +14,14 @@ class SpinBotBase(sc2.BotAI):
     inf_armor: int = 0
     vehicle_weapons: int = 0
     vehicle_armor: int = 0
+    units_took_damage: Set[int] = set()
 
     def __init__(self):
         super().__init__()
         self.game_minutes: float = 0
+
+    async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float):
+        self.units_took_damage.add(unit.tag)
 
     async def on_upgrade_complete(self, upgrade: UpgradeId):
         if upgrade == UpgradeId.TERRANINFANTRYWEAPONSLEVEL1:
@@ -84,38 +89,3 @@ class SpinBotBase(sc2.BotAI):
         self.game_minutes = (self.state.game_loop / 22.4) / 60
 
 
-class OrbitalCommander:
-    bot: SpinBotBase
-    call_down = AbilityId.CALLDOWNMULE_CALLDOWNMULE
-
-    def __init__(self, bot: SpinBotBase):
-        super().__init__()
-        self.bot = bot
-
-    async def command(self):
-        if self.bot.state.game_loop % 10 != 0:
-            return
-        await self.mule()
-
-    async def mule(self):
-        orbitals = self.bot.townhalls(UnitTypeId.ORBITALCOMMAND).ready
-        if orbitals:
-            can_mule = await self.can_mule(orbitals)
-            if can_mule:
-                muleable = self.muleable_minerals()
-                if muleable:
-                    can_mule.random(self.call_down, muleable.random)
-
-    async def can_mule(self, orbitals: Units) -> Units:
-        can_cast = [o for o in orbitals if await self.can_cast_mule(o)]
-        return Units(can_cast, self.bot)
-
-    async def can_cast_mule(self, unit: Unit):
-        return await self.bot.can_cast(unit, self.call_down, only_check_energy_and_cooldown=True)
-
-    def muleable_minerals(self) -> Units:
-        ready_bases = self.bot.townhalls.ready
-        if not ready_bases:
-            return Units([], self.bot)
-        else:
-            return self.bot.mineral_field.in_distance_of_group(ready_bases, 9)

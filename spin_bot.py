@@ -1,4 +1,3 @@
-import random
 from math import floor
 from typing import Union, Optional, List
 
@@ -7,21 +6,22 @@ from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
 
-from spin_bot_base import SpinBotBase, OrbitalCommander
+from combat_micro import CombatMicro
+from spin_bot_base import SpinBotBase
+from orbital_commander import OrbitalCommander
 
 
 class SpinBot(SpinBotBase):
 
     build_units: bool = True
-    main_target: Point2 = Point2()
-    hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
-    units_took_damage: Set[int] = set()
     need_air: bool = False
     orbital_commander: OrbitalCommander
+    combat_micro: CombatMicro
 
     def __init__(self):
         super().__init__()
         self.orbital_commander = OrbitalCommander(self)
+        self.combat_micro = CombatMicro(self)
 
     def has_enemy_within(self, unit: Unit, dist: int):
         for enemy in self.enemy_units.not_structure:
@@ -245,105 +245,6 @@ class SpinBot(SpinBotBase):
             return self.townhalls(UnitTypeId.COMMANDCENTER).idle.closest_to(self.main_base)
         return None
 
-    async def control_bio(self):
-        troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
-        if troops:
-            rally_point: Point2 = self.center(troops).position  # type: ignore
-            enemy_units = self.enemy_units.visible
-            threats = enemy_units - enemy_units({
-                UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.LARVA, UnitTypeId.EGG
-            })
-            for t in threats:
-                if self.structures.closest_distance_to(t) < 15:
-                    for m in troops:
-                        self.attack_or_rally(m, threats, rally_point)
-                    return
-
-            enemies = (enemy_units - enemy_units({UnitTypeId.LARVA, UnitTypeId.EGG})) + self.enemy_structures.visible
-            if troops.amount >= 40 and enemies:
-                for m in troops:
-                    self.attack_or_rally(m, enemies, rally_point)
-                return
-
-            marines_at_enemy_base = troops.closer_than(10, self.main_target)
-            if not enemies and marines_at_enemy_base.amount > 20:
-                self.main_target = random.choice(self.empty_expansions())
-
-            if troops.amount >= self.game_minutes * 2.5 or troops.amount >= 40:
-                for m in troops:
-                    if m.distance_to(self.main_target) > 5:
-                        m.attack(self.main_target)
-                return
-
-            for m in troops:
-                if m.distance_to(rally_point) > 5:
-                    m.move(rally_point)
-
-    def attack_or_rally(self, unit: Unit, targets: Units, rally: Point2):
-        attackable_enemies = Units([
-            t for t in targets if unit.can_attack_both or
-                                  (not t.is_flying and unit.can_attack_ground) or
-                                  (t.is_flying and unit.can_attack_air)
-        ], self)
-        if attackable_enemies:
-            closest = attackable_enemies.closest_to(unit)
-            closest_distance = unit.distance_to(closest) - (unit.radius + closest.radius)
-            if (not unit.weapon_ready) and closest_distance > 0.5:
-                distance = min(closest_distance, unit.distance_to_weapon_ready)
-                unit.move(unit.position.towards(closest, distance))
-            else:
-                unit.attack(closest)
-        elif unit.distance_to(rally) > 5:
-            unit.move(rally)
-
-    def empty_expansions(self) -> List[Point2]:
-        expansions: List[Point2] = self.expansion_locations_list  # type: ignore
-        return [
-            x for x in expansions if self.townhalls.closest_distance_to(x) > 5
-        ]
-
-    async def control_vikings(self):
-        vikings = self.units(UnitTypeId.VIKINGFIGHTER)
-        if vikings:
-            main_targets = self.enemy_units(self.hard_counter_types).visible
-            if main_targets:
-                for v in vikings:
-                    v.attack(main_targets.closest_to(v))
-                return
-            secondary_targets = self.enemy_units.visible.flying
-            if secondary_targets:
-                for v in vikings:
-                    v.attack(secondary_targets.closest_to(v))
-                return
-            troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
-            for v in vikings:
-                if v.tag in self.units_took_damage:
-                    v.move(v.position.towards(self.start_location, 5))
-                elif troops:
-                    target = troops.closest_to(v)
-                    if (target.distance_to(v)) > 3:
-                        v.move(v.position.towards(target, 2))
-
-    async def control_medivacs(self):
-        medivacs = self.units(UnitTypeId.MEDIVAC)
-        if medivacs:
-            troops = self.units({UnitTypeId.MARINE, UnitTypeId.MARAUDER})
-            injured_marines = troops.filter(lambda i: i.health < i.health_max)
-            if injured_marines:
-                for m in medivacs:
-                    target = injured_marines.closest_to(m)
-                    if (target.distance_to(m)) > 3:
-                        m.move(m.position.towards(target, 2))
-            elif troops:
-                for m in medivacs:
-                    target = troops.closest_to(m)
-                    if (target.distance_to(m)) > 3:
-                        m.move(m.position.towards(target, 2))
-            else:
-                for m in medivacs:
-                    if m.tag in self.units_took_damage:
-                        m.move(m.position.towards(self.start_location, 5))
-
     def check_for_air(self):
         flying_threats = self.enemy_units.flying.exclude_type({
             UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.OBSERVER
@@ -400,16 +301,13 @@ class SpinBot(SpinBotBase):
             self
         )
 
-    async def on_unit_took_damage(self, unit: Unit, amount_damage_taken: float):
-        self.units_took_damage.add(unit.tag)
-
     async def on_upgrade_complete(self, upgrade: UpgradeId):
         await super().on_upgrade_complete(upgrade)
 
     async def on_start(self):
         await super().on_start()
+        await self.combat_micro.on_start()
 
-        self.main_target = self.enemy_start_locations[0]
         if not self.build_units:
             await self.chat_send("DEBUG MODE: not building units")
 
@@ -430,12 +328,10 @@ class SpinBot(SpinBotBase):
             await self.build_turrets()
             await self.build_upgrades()
             await self.build_expansions()
-        await self.control_bio()
-        await self.control_vikings()
-        await self.control_medivacs()
+        await self.combat_micro.update()
         await self.repair_ccs()
         await self.upgrade_ccs()
         await self.production()
-        await self.orbital_commander.command()
+        await self.orbital_commander.update()
 
         self.units_took_damage.clear()

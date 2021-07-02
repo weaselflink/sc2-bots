@@ -287,9 +287,10 @@ class SpinBot(SpinBotBase):
         ], self)
         if attackable_enemies:
             closest = attackable_enemies.closest_to(unit)
-            closest_distance = closest.distance_to(unit) - (unit.radius + closest.radius)
-            if not unit.weapon_ready and closest_distance > 0.1:
-                unit.move(closest)
+            closest_distance = unit.distance_to(closest) - (unit.radius + closest.radius)
+            if (not unit.weapon_ready) and closest_distance > 0.5:
+                distance = min(closest_distance, unit.distance_to_weapon_ready)
+                unit.move(unit.position.towards(closest, distance))
             else:
                 unit.attack(closest)
         elif unit.distance_to(rally) > 5:

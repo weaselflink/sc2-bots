@@ -47,6 +47,7 @@ class SpinBotBase(sc2.BotAI):
     def has_building(self, where: sc2.Union[Unit, Point2]) -> bool:
         return self.structures.closest_distance_to(where) < 0.5
 
+    @property
     def main_base(self) -> Unit:
         if self.townhalls:
             return self.start_location.closest(self.townhalls)

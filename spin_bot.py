@@ -68,7 +68,7 @@ class SpinBot(SpinBotBase):
                 await self.build_single_barracks(self.main_base_ramp.barracks_correct_placement, addon_place=False)
                 return True
             elif racks.amount == 1:
-                near = self.main_base().position.towards(self.game_info.map_center, 8)
+                near = self.main_base.position.towards(self.game_info.map_center, 8)
                 await self.build_single_barracks(near)
                 return True
             elif (self.units(UnitTypeId.MARINE).amount < 40 and
@@ -172,7 +172,7 @@ class SpinBot(SpinBotBase):
 
     async def build_first_engineering_bay(self):
         if self.townhalls and self.gas_buildings and self.structures(UnitTypeId.BARRACKS).amount > 1:
-            near = self.main_base().position.towards(self.game_info.map_center, 8)
+            near = self.main_base.position.towards(self.game_info.map_center, 8)
             await self.fulfill_building_need(UnitTypeId.ENGINEERINGBAY, near)
 
     async def build_expansions(self):
@@ -233,7 +233,7 @@ class SpinBot(SpinBotBase):
                 self.townhalls(UnitTypeId.COMMANDCENTER).idle and
                 self.structures(UnitTypeId.ENGINEERINGBAY) and
                 self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)):
-            return self.townhalls(UnitTypeId.COMMANDCENTER).idle.closest_to(self.main_base())
+            return self.townhalls(UnitTypeId.COMMANDCENTER).idle.closest_to(self.main_base)
         return None
 
     async def control_bio(self):

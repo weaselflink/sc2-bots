@@ -253,7 +253,7 @@ class SpinBot(SpinBotBase):
                 UnitTypeId.OVERLORD, UnitTypeId.OVERSEER, UnitTypeId.LARVA, UnitTypeId.EGG
             })
             for t in threats:
-                if self.structures.closest_distance_to(t) < 30:
+                if self.structures.closest_distance_to(t) < 15:
                     for m in troops:
                         m.attack(threats.closest_to(m))
                     return
@@ -262,7 +262,7 @@ class SpinBot(SpinBotBase):
             if troops.amount >= 40 and enemies:
                 for m in troops:
                     m.attack(enemies.closest_to(m))
-                    return
+                return
 
             marines_at_enemy_base = troops.closer_than(10, self.main_target)
             if not enemies and marines_at_enemy_base.amount > 20:

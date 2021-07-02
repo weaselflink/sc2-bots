@@ -15,7 +15,7 @@ class SpinBot(SpinBotBase):
     build_units: bool = True
     main_target: Point2 = Point2()
     hard_counter_types: Set[UnitTypeId] = {UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC}
-    units_took_damage: set[int] = set()
+    units_took_damage: Set[int] = set()
     need_air: bool = False
     orbital_commander: OrbitalCommander
 

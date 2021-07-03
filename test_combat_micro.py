@@ -5,15 +5,16 @@ from sc2.unit import Unit
 from sc2.units import Units
 
 from combat_micro import CombatMicro
+from spin_bot_base import SpinBotBase
 
 
 class TestCombatMicro(unittest.IsolatedAsyncioTestCase):
 
-    unit: Unit = Mock()
-    empty_units = Units([], Mock())
-
     bot = Mock()
     combat_micro: CombatMicro = CombatMicro(bot)
+
+    unit: Unit = Mock()
+    empty_units = Units([], bot)
 
     async def test_main_target_initial(self):
         self.bot.enemy_start_locations = [1, 2, 3]

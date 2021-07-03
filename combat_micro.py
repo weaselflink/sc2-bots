@@ -45,11 +45,12 @@ class CombatMicro:
                         CombatMicro._attack_or_rally(m, threats, rally_point)
                     return
 
+            enough_troops = troops.amount >= self.bot.game_minutes * 2.5 or troops.amount >= 40
             enemies = (
                     (enemy_units - enemy_units({UnitTypeId.LARVA, UnitTypeId.EGG})) +
                     self.bot.enemy_structures.visible
             )
-            if troops.amount >= 40 and enemies:
+            if enough_troops and enemies:
                 for m in troops:
                     CombatMicro._attack_or_rally(m, enemies, rally_point)
                 return
@@ -58,7 +59,7 @@ class CombatMicro:
             if not enemies and marines_at_enemy_base.amount > 20:
                 self.main_target = random.choice(self._empty_expansions())
 
-            if troops.amount >= self.bot.game_minutes * 2.5 or troops.amount >= 40:
+            if enough_troops:
                 for m in troops:
                     if m.distance_to(self.main_target) > 5:
                         m.attack(self.main_target)

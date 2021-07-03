@@ -91,6 +91,7 @@ class CombatMicro:
 
     @staticmethod
     def _best_target(unit: Unit, targets: Units) -> Unit:
+        assert targets, "targets is empty"
         in_range = targets.subgroup(
             [t for t in targets if unit.target_in_range(t)]
         )

@@ -43,7 +43,7 @@ class SpinBot(SpinBotBase):
         can_build = self.can_build_once(UnitTypeId.SUPPLYDEPOT)
         if not can_build:
             return False
-        if not depots and self.can_build_once(UnitTypeId.SUPPLYDEPOT):
+        if not depots:
             await self.build_depot()
             return True
         if self.supply_cap < 30 and self.supply_left < 2:
@@ -243,9 +243,10 @@ class SpinBot(SpinBotBase):
         if self.townhalls and not in_progress:
             initial_cc = self.townhalls.closest_to(self.start_location)
             if (initial_cc and
-                    initial_cc.type_id == UnitTypeId.COMMANDCENTER and
-                    self.structures(UnitTypeId.BARRACKS).amount > 0 and
-                    self.can_afford(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND)):
+                    self.can_cast(
+                        initial_cc,
+                        AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND
+                    )):
                 return initial_cc
         return None
 
@@ -280,7 +281,7 @@ class SpinBot(SpinBotBase):
                 self.train(UnitTypeId.VIKINGFIGHTER)
 
             marauders = self.units(UnitTypeId.MARAUDER)
-            if marines.amount > 10 and marines.amount > marauders.amount * 3:
+            if marines.amount > 10 and marines.amount > marauders.amount * 2:
                 self.train(UnitTypeId.MARAUDER)
             if marines.amount < 90:
                 self.train(UnitTypeId.MARINE)

@@ -42,7 +42,7 @@ class CombatMicro:
             for t in threats:
                 if self.bot.structures.closest_distance_to(t) < 15:
                     for m in troops:
-                        CombatMicro._attack_or_rally(m, threats, rally_point)
+                        self._attack_or_rally(m, threats, rally_point)
                     return
 
             enough_troops = troops.amount >= self.bot.game_minutes * 2.5 or troops.amount >= 40
@@ -52,7 +52,7 @@ class CombatMicro:
             )
             if enough_troops and enemies:
                 for m in troops:
-                    CombatMicro._attack_or_rally(m, enemies, rally_point)
+                    self._attack_or_rally(m, enemies, rally_point)
                 return
 
             marines_at_enemy_base = troops.closer_than(10, self.main_target)
@@ -69,8 +69,7 @@ class CombatMicro:
                 if m.distance_to(rally_point) > 5:
                     m.move(rally_point)
 
-    @staticmethod
-    def _attack_or_rally(unit: Unit, targets: Units, rally: Point2):
+    def _attack_or_rally(self, unit: Unit, targets: Units, rally: Point2):
         attackable_enemies = targets.subgroup([
             t for t in targets if (
                     unit.can_attack_both or
@@ -80,6 +79,7 @@ class CombatMicro:
         ])
         if attackable_enemies:
             best = CombatMicro._best_target(unit, attackable_enemies)
+            self.bot.client.debug_line_out(unit, best)
             closest_distance = unit.distance_to(best) - (unit.radius + best.radius)
             if (not unit.weapon_ready) and closest_distance > 2:
                 distance = min(closest_distance, unit.distance_to_weapon_ready)

@@ -12,7 +12,10 @@ from spin_bot_base import SpinBotBase
 class CombatMicro:
     bot: SpinBotBase
     hard_counter_types: Set[UnitTypeId] = {
-        UnitTypeId.COLOSSUS, UnitTypeId.BATTLECRUISER, UnitTypeId.MEDIVAC
+        UnitTypeId.COLOSSUS,
+        UnitTypeId.BATTLECRUISER,
+        UnitTypeId.MEDIVAC,
+        UnitTypeId.BROODLORD
     }
     main_target: Point2 = Point2()
 

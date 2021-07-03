@@ -228,34 +228,37 @@ class SpinBot(SpinBotBase):
         return False
 
     async def upgrade_ccs(self):
-        need_orbital = self.need_orbital()
-        if need_orbital:
-            need_orbital(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND)
+        needs_orbital_upgrade = await self.need_orbital()
+        if needs_orbital_upgrade:
+            needs_orbital_upgrade(AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND)
             return True
-        need_planetary = self.need_planetary()
-        if need_planetary:
-            need_planetary(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)
+        needs_planetary_upgrade = await self.need_planetary()
+        if needs_planetary_upgrade:
+            needs_planetary_upgrade(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)
             return True
         return False
 
-    def need_orbital(self) -> Union[Unit, None]:
+    async def need_orbital(self) -> Union[Unit, None]:
         in_progress = self.already_pending(UnitTypeId.ORBITALCOMMAND)
         if self.townhalls and not in_progress:
             initial_cc = self.townhalls.closest_to(self.start_location)
             if (initial_cc and
-                    self.can_cast(
+                    await self.can_cast(
                         initial_cc,
                         AbilityId.UPGRADETOORBITAL_ORBITALCOMMAND
                     )):
                 return initial_cc
         return None
 
-    def need_planetary(self) -> Union[Unit, None]:
-        if (self.townhalls.amount > 1 and
-                self.townhalls(UnitTypeId.COMMANDCENTER).idle and
-                self.structures(UnitTypeId.ENGINEERINGBAY) and
-                self.can_afford(AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)):
-            return self.townhalls(UnitTypeId.COMMANDCENTER).idle.closest_to(self.main_base)
+    async def need_planetary(self) -> Union[Unit, None]:
+        needing = self.townhalls.idle.subgroup(
+            [t for t in self.townhalls.idle if (
+                    t.distance_to(self.start_location) > 9 and
+                    await self.can_cast(t, AbilityId.UPGRADETOPLANETARYFORTRESS_PLANETARYFORTRESS)
+            )]
+        )
+        if needing:
+            return needing.first
         return None
 
     def check_for_air(self):

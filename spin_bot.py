@@ -88,9 +88,9 @@ class SpinBot(SpinBotBase):
         return False
 
     async def barracks_missing_addons(self) -> Units:
-        return Units(
-            [b for b in self.structures(UnitTypeId.BARRACKS) if await self.room_for_addon(b)],
-            self
+        barracks = self.structures(UnitTypeId.BARRACKS)
+        return barracks.subgroup(
+            [b for b in self.structures(UnitTypeId.BARRACKS) if await self.room_for_addon(b)]
         )
 
     async def room_for_addon(self, unit: Unit) -> bool:
@@ -293,12 +293,11 @@ class SpinBot(SpinBotBase):
                 break
 
     async def scvs_repairing(self, target: Unit) -> Units:
-        return Units(
+        return self.workers.subgroup(
             [w for w in self.workers if (
                     w.is_repairing and
                     w.orders and
-                    w.orders[0].target == target.tag)],
-            self
+                    w.orders[0].target == target.tag)]
         )
 
     async def on_upgrade_complete(self, upgrade: UpgradeId):

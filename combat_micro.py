@@ -65,12 +65,13 @@ class CombatMicro:
                 if m.distance_to(rally_point) > 5:
                     m.move(rally_point)
 
-    def _attack_or_rally(self, unit: Unit, targets: Units, rally: Point2):
-        attackable_enemies = Units([
+    @staticmethod
+    def _attack_or_rally(unit: Unit, targets: Units, rally: Point2):
+        attackable_enemies = targets.subgroup([
             t for t in targets if unit.can_attack_both or
                                   (not t.is_flying and unit.can_attack_ground) or
                                   (t.is_flying and unit.can_attack_air)
-        ], self.bot)
+        ])
         if attackable_enemies:
             closest = attackable_enemies.closest_to(unit)
             closest_distance = unit.distance_to(closest) - (unit.radius + closest.radius)
@@ -82,14 +83,15 @@ class CombatMicro:
         elif unit.distance_to(rally) > 5:
             unit.move(rally)
 
-    def _best_target(self, unit: Unit, targets: Units) -> Unit:
-        in_range = Units(
-            [t for t in targets if unit.target_in_range(t)],
-            self.bot
+    @staticmethod
+    def _best_target(unit: Unit, targets: Units) -> Unit:
+        in_range = targets.subgroup(
+            [t for t in targets if unit.target_in_range(t)]
         )
         if in_range:
             in_range.sort(key=CombatMicro._range_sorter(unit))
-            in_range.sort(key=CombatMicro._damage_sorter(unit))
+            in_range.sort(key=CombatMicro._injured_sorter())
+            in_range.sort(key=CombatMicro._damage_output_sorter(unit))
             return in_range.first
         return targets.closest_to(unit)
 
@@ -100,9 +102,15 @@ class CombatMicro:
         return sort_key
 
     @staticmethod
-    def _damage_sorter(unit: Unit) -> Callable[[Unit], float]:
+    def _damage_output_sorter(unit: Unit) -> Callable[[Unit], float]:
         def sort_key(t: Unit) -> float:
             return unit.calculate_damage_vs_target(t)[0]
+        return sort_key
+
+    @staticmethod
+    def _injured_sorter() -> Callable[[Unit], float]:
+        def sort_key(t: Unit) -> float:
+            return t.health_percentage
         return sort_key
 
     async def _control_vikings(self):

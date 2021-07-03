@@ -29,7 +29,7 @@ class OrbitalCommander:
 
     async def _can_mule(self, orbitals: Units) -> Units:
         can_cast = [o for o in orbitals if await self._can_cast_mule(o)]
-        return Units(can_cast, self.bot)
+        return orbitals.subgroup(can_cast)
 
     async def _can_cast_mule(self, unit: Unit):
         return await self.bot.can_cast(unit, self.call_down, only_check_energy_and_cooldown=True)

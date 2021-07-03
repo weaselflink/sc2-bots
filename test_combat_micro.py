@@ -13,7 +13,7 @@ class TestCombatMicro(unittest.IsolatedAsyncioTestCase):
     bot = Mock()
     combat_micro: CombatMicro = CombatMicro(bot)
 
-    unit: Unit = Mock()
+    unit: Unit = Unit(Mock(), bot)
     empty_units = Units([], bot)
 
     async def test_main_target_initial(self):

@@ -81,7 +81,7 @@ class CombatMicro:
         if attackable_enemies:
             best = CombatMicro._best_target(unit, attackable_enemies)
             closest_distance = unit.distance_to(best) - (unit.radius + best.radius)
-            if (not unit.weapon_ready) and closest_distance > 0.5:
+            if (not unit.weapon_ready) and closest_distance > 2:
                 distance = min(closest_distance, unit.distance_to_weapon_ready)
                 unit.move(unit.position.towards(best, distance))
             else:

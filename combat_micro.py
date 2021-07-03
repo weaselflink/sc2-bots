@@ -39,7 +39,7 @@ class CombatMicro:
             for t in threats:
                 if self.bot.structures.closest_distance_to(t) < 15:
                     for m in troops:
-                        self._attack_or_rally(m, threats, rally_point)
+                        CombatMicro._attack_or_rally(m, threats, rally_point)
                     return
 
             enemies = (
@@ -48,7 +48,7 @@ class CombatMicro:
             )
             if troops.amount >= 40 and enemies:
                 for m in troops:
-                    self._attack_or_rally(m, enemies, rally_point)
+                    CombatMicro._attack_or_rally(m, enemies, rally_point)
                 return
 
             marines_at_enemy_base = troops.closer_than(10, self.main_target)

@@ -68,18 +68,20 @@ class CombatMicro:
     @staticmethod
     def _attack_or_rally(unit: Unit, targets: Units, rally: Point2):
         attackable_enemies = targets.subgroup([
-            t for t in targets if unit.can_attack_both or
-                                  (not t.is_flying and unit.can_attack_ground) or
-                                  (t.is_flying and unit.can_attack_air)
+            t for t in targets if (
+                    unit.can_attack_both or
+                    (not t.is_flying and unit.can_attack_ground) or
+                    (t.is_flying and unit.can_attack_air)
+            )
         ])
         if attackable_enemies:
-            closest = attackable_enemies.closest_to(unit)
-            closest_distance = unit.distance_to(closest) - (unit.radius + closest.radius)
+            best = CombatMicro._best_target(unit, attackable_enemies)
+            closest_distance = unit.distance_to(best) - (unit.radius + best.radius)
             if (not unit.weapon_ready) and closest_distance > 0.5:
                 distance = min(closest_distance, unit.distance_to_weapon_ready)
-                unit.move(unit.position.towards(closest, distance))
+                unit.move(unit.position.towards(best, distance))
             else:
-                unit.attack(closest)
+                unit.attack(best)
         elif unit.distance_to(rally) > 5:
             unit.move(rally)
 
@@ -99,18 +101,21 @@ class CombatMicro:
     def _range_sorter(unit: Unit) -> Callable[[Unit], float]:
         def sort_key(t: Unit) -> float:
             return unit.distance_to(t)
+
         return sort_key
 
     @staticmethod
     def _damage_output_sorter(unit: Unit) -> Callable[[Unit], float]:
         def sort_key(t: Unit) -> float:
             return unit.calculate_damage_vs_target(t)[0]
+
         return sort_key
 
     @staticmethod
     def _injured_sorter() -> Callable[[Unit], float]:
         def sort_key(t: Unit) -> float:
             return t.health_percentage
+
         return sort_key
 
     async def _control_vikings(self):

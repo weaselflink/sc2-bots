@@ -1,5 +1,5 @@
 import random
-from typing import List, Set
+from typing import List, Set, Callable
 
 from sc2 import UnitTypeId
 from sc2.position import Point2
@@ -81,6 +81,29 @@ class CombatMicro:
                 unit.attack(closest)
         elif unit.distance_to(rally) > 5:
             unit.move(rally)
+
+    def _best_target(self, unit: Unit, targets: Units) -> Unit:
+        in_range = Units(
+            [t for t in targets if unit.target_in_range(t)],
+            self.bot
+        )
+        if in_range:
+            in_range.sort(key=CombatMicro._range_sorter(unit))
+            in_range.sort(key=CombatMicro._damage_sorter(unit))
+            return in_range.first
+        return targets.closest_to(unit)
+
+    @staticmethod
+    def _range_sorter(unit: Unit) -> Callable[[Unit], float]:
+        def sort_key(t: Unit) -> float:
+            return unit.distance_to(t)
+        return sort_key
+
+    @staticmethod
+    def _damage_sorter(unit: Unit) -> Callable[[Unit], float]:
+        def sort_key(t: Unit) -> float:
+            return unit.calculate_damage_vs_target(t)[0]
+        return sort_key
 
     async def _control_vikings(self):
         vikings = self.bot.units(UnitTypeId.VIKINGFIGHTER)

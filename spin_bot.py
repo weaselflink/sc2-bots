@@ -39,18 +39,30 @@ class SpinBot(SpinBotBase):
                 depot(AbilityId.MORPH_SUPPLYDEPOT_RAISE)
 
     async def build_depots(self):
-        depot_placement_positions = self.empty_ramp_corners()
-        if self.supply_left < 2 and self.can_build_once(UnitTypeId.SUPPLYDEPOT):
-            if depot_placement_positions:
-                await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions[0])
-                return True
-            else:
-                await self.build(
-                    UnitTypeId.SUPPLYDEPOT,
-                    self.townhalls.first.position.towards(self.game_info.map_center, 8)
-                )
-                return True
+        depots = self.structures({UnitTypeId.SUPPLYDEPOT, UnitTypeId.SUPPLYDEPOTLOWERED})
+        can_build = self.can_build_once(UnitTypeId.SUPPLYDEPOT)
+        if not can_build:
+            return False
+        if not depots and self.can_build_once(UnitTypeId.SUPPLYDEPOT):
+            await self.build_depot()
+            return True
+        if self.supply_cap < 30 and self.supply_left < 2:
+            await self.build_depot()
+            return True
+        if self.supply_cap >= 30 and self.supply_left < 4:
+            await self.build_depot()
+            return True
         return False
+
+    async def build_depot(self):
+        depot_placement_positions = self.empty_ramp_corners()
+        if depot_placement_positions:
+            await self.build(UnitTypeId.SUPPLYDEPOT, depot_placement_positions[0])
+        else:
+            await self.build(
+                UnitTypeId.SUPPLYDEPOT,
+                self.townhalls.first.position.towards(self.game_info.map_center, 8)
+            )
 
     def empty_ramp_corners(self) -> List[Point2]:
         corners: Set[Point2] = self.main_base_ramp.corner_depots  # type: ignore

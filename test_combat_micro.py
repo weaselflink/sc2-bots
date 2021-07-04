@@ -21,9 +21,8 @@ class TestCombatMicro(unittest.IsolatedAsyncioTestCase):
         await self.combat_micro.on_start()
         self.assertEqual(self.combat_micro.main_target, 1)
 
-    def test_best_target_fail_on_empty(self):
-        with self.assertRaises(AssertionError):
-            CombatMicro._best_target(self.unit, self.empty_units)
+    def test_best_target_none_on_empty(self):
+        self.assertIsNone(CombatMicro._best_target(self.unit, self.empty_units))
 
 
 if __name__ == '__main__':

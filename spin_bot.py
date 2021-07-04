@@ -156,39 +156,39 @@ class SpinBot(SpinBotBase):
                 await self.fulfill_building_need(UnitTypeId.STARPORT, ebays.first)
         if ebays.idle:
             an_ebay = ebays.idle.first
-            if self.inf_weapons < 1 and await self.can_cast(
+            if self.upgrades.inf_weapons < 1 and await self.can_cast(
                     an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1):
                 an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL1)
-            elif self.inf_armor < 1 and await self.can_cast(
+            elif self.upgrades.inf_armor < 1 and await self.can_cast(
                     an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1):
                 an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL1)
-            elif self.inf_weapons < 2 and await self.can_cast(
+            elif self.upgrades.inf_weapons < 2 and await self.can_cast(
                     an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2):
                 an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL2)
-            elif self.inf_armor < 2 and await self.can_cast(
+            elif self.upgrades.inf_armor < 2 and await self.can_cast(
                     an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2):
                 an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL2)
-            elif self.inf_weapons < 3 and await self.can_cast(
+            elif self.upgrades.inf_weapons < 3 and await self.can_cast(
                     an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3):
                 an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYWEAPONSLEVEL3)
-            elif self.inf_armor < 3 and await self.can_cast(
+            elif self.upgrades.inf_armor < 3 and await self.can_cast(
                     an_ebay, AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3):
                 an_ebay(AbilityId.ENGINEERINGBAYRESEARCH_TERRANINFANTRYARMORLEVEL3)
-            elif self.inf_weapons == 3 and await self.can_cast(
+            elif self.upgrades.inf_weapons == 3 and await self.can_cast(
                     an_ebay, AbilityId.RESEARCH_HISECAUTOTRACKING):
                 an_ebay(AbilityId.RESEARCH_HISECAUTOTRACKING)
-            elif self.inf_weapons == 3 and await self.can_cast(
+            elif self.upgrades.inf_weapons == 3 and await self.can_cast(
                     an_ebay, AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE):
                 an_ebay(AbilityId.RESEARCH_TERRANSTRUCTUREARMORUPGRADE)
-        if armories.idle and self.inf_weapons == 2 and self.inf_armor == 2:
+        if armories.idle and self.upgrades.inf_weapons == 2 and self.upgrades.inf_armor == 2:
             an_armory = armories.idle.first
-            if self.vehicle_armor < 1 and await self.can_cast(
+            if self.upgrades.vehicle_armor < 1 and await self.can_cast(
                     an_armory, AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1):
                 an_armory(AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1)
-            elif self.vehicle_armor < 2 and await self.can_cast(
+            elif self.upgrades.vehicle_armor < 2 and await self.can_cast(
                     an_armory, AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1):
                 an_armory(AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1)
-            elif self.vehicle_armor < 3 and await self.can_cast(
+            elif self.upgrades.vehicle_armor < 3 and await self.can_cast(
                     an_armory, AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1):
                 an_armory(AbilityId.ARMORYRESEARCH_TERRANVEHICLEANDSHIPPLATINGLEVEL1)
 

@@ -284,7 +284,7 @@ class SpinBot(SpinBotBase):
                 self.train(UnitTypeId.VIKINGFIGHTER)
 
             marauders = self.units(UnitTypeId.MARAUDER)
-            if marines.amount > 10 and marines.amount > marauders.amount * 2:
+            if marines.amount >= 4 and marines.amount > marauders.amount * 2:
                 self.train(UnitTypeId.MARAUDER)
             if marines.amount < 90:
                 self.train(UnitTypeId.MARINE)

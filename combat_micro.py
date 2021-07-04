@@ -1,5 +1,5 @@
 import random
-from typing import List, Set, Callable
+from typing import List, Set, Callable, Union
 
 from sc2 import UnitTypeId
 from sc2.position import Point2
@@ -67,18 +67,23 @@ class CombatMicro:
 
             for m in troops:
                 if m.distance_to(rally_point) > 5:
-                    m.move(rally_point)
+                    self._fighting_move(m, enemies, rally_point)
+
+    def _fighting_move(self, unit: Unit, targets: Units, rally: Point2):
+        if not unit.weapon_ready or not targets:
+            self._move_near(unit, rally)
+            return
+        attackable_enemies = CombatMicro._attackable_enemies(unit, targets)
+        best = CombatMicro._best_target(unit, attackable_enemies, only_in_range=True)
+        if best:
+            unit.attack(best)
+            return
+        self._move_near(unit, rally)
 
     def _attack_or_rally(self, unit: Unit, targets: Units, rally: Point2):
-        attackable_enemies = targets.subgroup([
-            t for t in targets if (
-                    unit.can_attack_both or
-                    (not t.is_flying and unit.can_attack_ground) or
-                    (t.is_flying and unit.can_attack_air)
-            )
-        ])
-        if attackable_enemies:
-            best = CombatMicro._best_target(unit, attackable_enemies)
+        attackable_enemies = CombatMicro._attackable_enemies(unit, targets)
+        best = CombatMicro._best_target(unit, attackable_enemies)
+        if best:
             self.bot.client.debug_line_out(unit, best)
             closest_distance = unit.distance_to(best) - (unit.radius + best.radius)
             if (not unit.weapon_ready) and closest_distance > 2:
@@ -86,12 +91,28 @@ class CombatMicro:
                 unit.move(unit.position.towards(best, distance))
             else:
                 unit.attack(best)
-        elif unit.distance_to(rally) > 5:
+            return
+        self._move_near(unit, rally)
+
+    def _move_near(self, unit: Unit, rally: Point2):
+        if unit.distance_to(rally) > 5:
+            self.bot.client.debug_line_out(unit, rally.to3)
             unit.move(rally)
 
     @staticmethod
-    def _best_target(unit: Unit, targets: Units) -> Unit:
-        assert targets, "targets is empty"
+    def _attackable_enemies(unit: Unit, targets: Units):
+        return targets.subgroup([
+            t for t in targets if (
+                    unit.can_attack_both or
+                    (not t.is_flying and unit.can_attack_ground) or
+                    (t.is_flying and unit.can_attack_air)
+            )
+        ])
+
+    @staticmethod
+    def _best_target(unit: Unit, targets: Units, only_in_range: bool = False) -> Union[Unit, None]:
+        if not targets:
+            return None
         in_range = targets.subgroup(
             [t for t in targets if unit.target_in_range(t)]
         )
@@ -100,6 +121,8 @@ class CombatMicro:
             in_range.sort(key=CombatMicro._injured_sorter())
             in_range.sort(key=CombatMicro._damage_output_sorter(unit))
             return in_range.first
+        if only_in_range:
+            return None
         return targets.closest_to(unit)
 
     @staticmethod

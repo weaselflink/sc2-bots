@@ -1,7 +1,8 @@
 from math import floor
 from typing import Union, Optional, List
 
-from sc2.constants import *
+from sc2 import UnitTypeId, AbilityId
+from sc2.ids.upgrade_id import UpgradeId
 from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
@@ -65,7 +66,7 @@ class SpinBot(SpinBotBase):
             )
 
     def empty_ramp_corners(self) -> List[Point2]:
-        corners: Set[Point2] = self.main_base_ramp.corner_depots  # type: ignore
+        corners: List[Point2] = list(self.main_base_ramp.corner_depots)  # type: ignore
         return [
             p for p in corners if not self.has_building(p)
         ]

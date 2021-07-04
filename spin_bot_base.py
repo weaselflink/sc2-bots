@@ -87,5 +87,3 @@ class SpinBotBase(sc2.BotAI):
 
     async def on_step(self, iteration: int):
         self.game_minutes = (self.state.game_loop / 22.4) / 60
-
-

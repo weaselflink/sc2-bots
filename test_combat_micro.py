@@ -5,7 +5,6 @@ from sc2.unit import Unit
 from sc2.units import Units
 
 from combat_micro import CombatMicro
-from spin_bot_base import SpinBotBase
 
 
 class TestCombatMicro(unittest.IsolatedAsyncioTestCase):

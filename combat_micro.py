@@ -2,6 +2,7 @@ import random
 from typing import List, Set, Callable, Union
 
 from sc2 import UnitTypeId
+from sc2.ids.buff_id import BuffId
 from sc2.position import Point2
 from sc2.unit import Unit
 from sc2.units import Units
@@ -17,7 +18,12 @@ class CombatMicro:
         UnitTypeId.MEDIVAC,
         UnitTypeId.BROODLORD
     }
+    bio_priority_targets: Set[UnitTypeId] = {
+        UnitTypeId.BANELING,
+        UnitTypeId.ARCHON
+    }
     main_target: Point2 = Point2()
+    enough_troops: bool = False
 
     def __init__(self, bot: SpinBotBase):
         super().__init__()
@@ -45,12 +51,15 @@ class CombatMicro:
                         self._attack_or_rally(m, threats, rally_point)
                     return
 
-            enough_troops = troops.amount >= self.bot.game_minutes * 2.5 or troops.amount >= 40
+            if not self.enough_troops:
+                self.enough_troops = troops.amount >= self.bot.game_minutes * 2.5 or troops.amount >= 40
+            else:
+                self.enough_troops = troops.amount >= self.bot.game_minutes * 2 or troops.amount >= 30
             enemies = (
                     (enemy_units - enemy_units({UnitTypeId.LARVA, UnitTypeId.EGG})) +
                     self.bot.enemy_structures.visible
             )
-            if enough_troops and enemies:
+            if self.enough_troops and enemies:
                 for m in troops:
                     self._attack_or_rally(m, enemies, rally_point)
                 return
@@ -59,7 +68,7 @@ class CombatMicro:
             if not enemies and marines_at_enemy_base.amount > 20:
                 self.main_target = random.choice(self._empty_expansions())
 
-            if enough_troops:
+            if self.enough_troops:
                 for m in troops:
                     if m.distance_to(self.main_target) > 5:
                         m.attack(self.main_target)
@@ -82,7 +91,11 @@ class CombatMicro:
 
     def _attack_or_rally(self, unit: Unit, targets: Units, rally: Point2):
         attackable_enemies = CombatMicro._attackable_enemies(unit, targets)
-        best = CombatMicro._best_target(unit, attackable_enemies)
+        priority_targets = self._priority_targets(targets)
+        if priority_targets:
+            best = CombatMicro._best_target(unit, priority_targets)
+        else:
+            best = CombatMicro._best_target(unit, attackable_enemies)
         if best:
             self.bot.client.debug_line_out(unit, best)
             closest_distance = unit.distance_to(best) - (unit.radius + best.radius)
@@ -93,6 +106,14 @@ class CombatMicro:
                 unit.attack(best)
             return
         self._move_near(unit, rally)
+
+    def _priority_targets(self, targets: Units) -> Units:
+        return targets.subgroup(
+            [t for t in targets if (
+                    t.type_id in self.bio_priority_targets or
+                    (t.type_id == UnitTypeId.SENTRY and BuffId.GUARDIANSHIELD in t.buffs)
+            )]
+        )
 
     def _move_near(self, unit: Unit, rally: Point2):
         if unit.distance_to(rally) > 5:
